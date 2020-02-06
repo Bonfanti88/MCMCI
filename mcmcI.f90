@@ -1646,7 +1646,7 @@ PROGRAM MCMCI
                 &   wfilter(i).NE."g'".AND.wfilter(i).NE."r'".AND.wfilter(i).NE."i'".AND. &
                 &   wfilter(i).NE."z'".AND.wfilter(i).NE."Ke".AND.wfilter(i).NE."Co".AND. &
                 &   wfilter(i).NE."S1".AND.wfilter(i).NE."S2".AND.wfilter(i).NE."S3".AND. &
-                &   wfilter(i).NE."S4")THEN !.AND.wfilter(i).NE."Ch"
+                &   wfilter(i).NE."S4".AND.wfilter(i).NE."Ch".AND.wfilter(i).NE."TE")THEN
               temp2 = '  ' // wfilter(i) // '-filter is not in tables.'
               PRINT*, temp2
               READ(11,*) dum,tefil2,dFsec(i,1,1),edFsec_ini(i,1),dilu(i),edilu(i),phampli1_ini(i), &
@@ -1831,7 +1831,7 @@ PROGRAM MCMCI
                 &   wfilter(i).NE."g'".AND.wfilter(i).NE."r'".AND.wfilter(i).NE."i'".AND. &
                 &   wfilter(i).NE."z'".AND.wfilter(i).NE."Ke".AND.wfilter(i).NE."Co".AND. &
                 &   wfilter(i).NE."S1".AND.wfilter(i).NE."S2".AND.wfilter(i).NE."S3".AND. &
-                &   wfilter(i).NE."S4")THEN !.AND.wfilter(i).NE."Ch"
+                &   wfilter(i).NE."S4".AND.wfilter(i).NE."Ch".AND.wfilter(i).NE."TE")THEN
               temp2 = wfilter(i) // '-filter is not in tables.'
               PRINT*, temp2
               READ(11,*) dum,tefil2,dFsec(i,1,1),edFsec_ini(i,1),dilu(i),edilu(i),phampli1_ini(i), &
@@ -9617,7 +9617,7 @@ SUBROUTINE qdinter(spectro,espectro,filter,a,ea)
   IMPLICIT NONE
   
   INTEGER :: i,k,test2
-  INTEGER, PARAMETER :: np=141408 !135516
+  INTEGER, PARAMETER :: np=147300 !135516
 
   DOUBLE PRECISION, DIMENSION(19), PARAMETER :: mec = (/ -5.0,-4.5,-4.0, &
   & -3.5,-3.0,-2.5,-2.0,-1.5,-1.0,-0.5,-0.3,-0.2,-0.1,0.,0.1,0.2,  &
@@ -9798,7 +9798,7 @@ SUBROUTINE nlinter(spectro,espectro,filter,a,ea)
   IMPLICIT NONE
   
   INTEGER :: i,k,test2
-  INTEGER, PARAMETER :: np=135516
+  INTEGER, PARAMETER :: np=147300 !135516
 
   DOUBLE PRECISION, DIMENSION(19), PARAMETER :: mec = (/ -5.0,-4.5,-4.0, &
   & -3.5,-3.0,-2.5,-2.0,-1.5,-1.0,-0.5,-0.3,-0.2,-0.1,0.,0.1,0.2,  &

@@ -1,5 +1,5 @@
 |-----------------------------------------------------------------------------|
-|                                 README FILE                   v1.0_20200108 |
+|                                 README FILE                   v1.1_20200206 |
 |                MCMCI code. Bonfanti & Gillon (2020) [BG20]                  |
 |                  andrea.bonfanti@oeaw.ac.at                                 |
 |                  michael.gillon@uliege.be                                   |
@@ -13,6 +13,7 @@
 | 3) How to fill in the mcmc.dat input form                                   |
 | 4) Output files                                                             |
 | 5) Examples                                                                 |
+| 6) Last updates                                                             |
 |-----------------------------------------------------------------------------|
 
 |-----------------------------------------------------------------------------|
@@ -478,7 +479,9 @@ ECLIPSE_DURATION_+_ERROR_(day)
 T0_+_ERROR_(BJD) 
 	'y' is the default choice if a lightcurve is available
 PERIOD_+_ERROR_(day)	
-	'y' is the default choice if a lightcurve is available
+	'y' is the default choice if more than one transit is available, otherwise
+	 set it to 'n' with the nominal value found in the literature, as there's
+	 no way to constrain it
 	'j' the stepping probability is weighted by the factor P(link-1)/P(link)
 EXCENTRICITY_+_ERROR			
 	0. 0. 'n' is the deafault choice if only transit LCs are available. If
@@ -669,3 +672,13 @@ Filenames containing the name of a stellar/planetary parameter may have two
    phot0001.txt; phot0002.txt; phot0003.txt; phot0004.txt
 - 1 RV time-series
    rv0001.txt
+   
+
+|-----------------------------------------------------------------------------|
+| 6) Last updates                                                             |
+|-----------------------------------------------------------------------------|
+- 06/02/2020. LD coefficients for both quadratic and nonlinear models in TESS
+   (TE) and Cheops (Ch) TESS (TE) bandpasses now available. Coefficients have
+   been computed from ATLAS models, using the code by Espinoza&Jordan (2015;
+   http://arxiv.org/abs/1503.07020)
+   Please update quadratic.dat, nonlinear.dat, and mcmcI.f90 files

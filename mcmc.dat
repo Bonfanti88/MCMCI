@@ -141,7 +141,7 @@ Name: phot0001.txt, phot0002.txt, etc.
 File format: JD-2450000, flux, error, x, y, fwhm, fwhm_x, fwhm_y, sky, airmass, texp (s) 
 If Option 14 GT 0 (PLD), 9 more columns are required
 Input format: 
-- Fi = filter[S+uvby,S+1234,Ke,Co,J+UBVRIJHK,ugriz+'] 
+- Fi = filter[S+uvby,S+1234,Ke,Co,J+UBVRIJHK,ugriz+',TE,Ch] 
 - 1 = time model order[-1:4]
 - 2 = airmass model order[0:4]
 - 3 = FWHM model order[0:4]
