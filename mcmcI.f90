@@ -1,7 +1,7 @@
 PROGRAM MCMCI
 	
 	USE SunPD, sunra=>RSunm, sunmass=>MSunkg
-	USE IsoPD, only : dimZ_iso,BmVinf,BmVsup,Zi_inf,Zi_sup
+	USE IsoPD, only : BmVinf,BmVsup,Zi_inf,Zi_sup
 	USE empRel, only : cJ
   !************************************************************************************
   !1. VARIABLES DECLARATION                                                           *
@@ -22,7 +22,7 @@ PROGRAM MCMCI
   INTEGER :: nsysglo=0,nsysparmax=81,nrvparglo=3,ne2=33,testpld=0
   INTEGER :: nrvsysparmax=21,tgus=1,nxd=0,nddf=0,testsin,testflare
   INTEGER :: test_kb=0,test_t0=0,test_per=0,test_b=0,test_dF=0,test_tidel=0,test_dur=0
-  INTEGER :: row,rowTot,acc,sismo,iz,xZi,xZu,jj,idum,ntra,idCol,d,dN,dar
+  INTEGER :: row,rowTot,acc,sismo,iz,xZi,xZu,jj,idum,ntra,idCol,d,dN,dar,dimZ_iso,iol
 
   INTEGER, DIMENSION(:), ALLOCATABLE :: np,nprv,IArr,jumpgibbs,fwhmyorder,nf,testphef      
   INTEGER, DIMENSION(:), ALLOCATABLE :: epoch,epoch_oc,gibbsonoff,skyorder,nep
@@ -89,7 +89,7 @@ PROGRAM MCMCI
   DOUBLE PRECISION, DIMENSION(29) :: star
   DOUBLE PRECISION, DIMENSION(2) :: vg,I_vg
   DOUBLE PRECISION, DIMENSION(3) :: vrho,I_vrho
-  DOUBLE PRECISION, DIMENSION(dimZ_iso) :: Z_iso
+  DOUBLE PRECISION, DIMENSION(:), ALLOCATABLE :: Z_iso
 
   DOUBLE PRECISION :: gelman_svsinicosbeta,gelman_svsinisinbeta,gelman_rs,gelman_ms
   DOUBLE PRECISION :: gelman_f2,gelmanval,gelman_teff,gelman_met,gelman_col
@@ -3742,6 +3742,17 @@ PROGRAM MCMCI
 			close(3)
 									    	
 			OPEN(UNIT=4,FILE='/home/bonfanti/Documents/TopCat/Z_iso.txt',STATUS='OLD')
+			iz=0
+			READ(4, '(A)', IOSTAT=iol) head
+			do while (iol.eq.0)
+				iz=iz+1
+				READ(4, '(A)', IOSTAT=iol) head
+			end do
+			print*, 'dimZ_iso',iz
+			dimZ_iso=iz
+			close(4)
+			allocate(Z_iso(dimZ_iso))
+			OPEN(UNIT=4,FILE='/home/bonfanti/Documents/TopCat/Z_iso.txt',STATUS='OLD')
 			do iz=1,dimZ_iso
 				read(4,*) Z_iso(iz)
 			end do
@@ -4021,6 +4032,17 @@ PROGRAM MCMCI
 				close(3)
 						    			    	
 	    		OPEN(UNIT=4,FILE='/home/bonfanti/Documents/TopCat/Z_iso.txt',STATUS='OLD')
+	    		iz=0
+				READ(4, '(A)', IOSTAT=iol) head
+				do while (iol.eq.0)
+					iz=iz+1
+					READ(4, '(A)', IOSTAT=iol) head
+				end do
+				print*, 'dimZ_iso',iz
+				dimZ_iso=iz
+				close(4)
+				allocate(Z_iso(dimZ_iso))
+				OPEN(UNIT=4,FILE='/home/bonfanti/Documents/TopCat/Z_iso.txt',STATUS='OLD')
 	    		do iz=1,dimZ_iso
 	    			read(4,*) Z_iso(iz)
 	    		end do
