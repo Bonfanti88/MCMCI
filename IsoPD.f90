@@ -2,12 +2,12 @@ MODULE IsoPD
 	
 	INTEGER, PARAMETER :: ct=2,cM=4,clogL=5,clogTe=6,clogg=7
 	INTEGER, PARAMETER :: cmag1=26,cmag2=25,cmbol=23,cmagx=24 !V->26; B->25
+	INTEGER, PARAMETER :: logtVal=0
 	INTEGER, PARAMETER :: cgZAMS=5,crhoZAMS=6,cLZAMS=3
 	INTEGER, PARAMETER :: ct_T=3,cM_T=2,clogL_T=4 !ct_T yrs, not log
 	INTEGER, PARAMETER :: clogTe_T=5,clogR_T=6
 	INTEGER, PARAMETER :: cVelL=2,cVelg=3,cVelrho=4
 	INTEGER, PARAMETER :: cBTeff=1,cBBmV=2,ctau=4
-	INTEGER, PARAMETER :: dimZ_iso=89
 	INTEGER, PARAMETER :: clab=8
 		
 	INTEGER, PRIVATE :: idd

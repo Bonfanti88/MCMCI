@@ -507,8 +507,13 @@ SUBROUTINE SCPmcmcPD12S(SCP,Intestaz,IsocTab,Zvec,Zndxi,Zndxf,TrackTab,nM,Mav,in
 		row_i=size(Isoc,1)
 		allocate(t_iso(row_i)); allocate(logt_iso(row_i))
 				
-		t_iso=Isoc(:,ct)
-		logt_iso=dnint(log10(t_iso)*100)/100
+		if (logtVal.eq.0) then
+			t_iso=Isoc(:,ct)
+			logt_iso=dnint(log10(t_iso)*100)/100
+		else if (logtVal.eq.1) then
+			logt_iso=Isoc(:,ct)
+			logt_iso=dnint(logt_iso*100)/100
+		endif
 		t_iso=10.**logt_iso !to avoid numerical errors: in this way t_iso SHOULD come from logt
 		! whose 2nd decimal digit is exactly 0 or 5, but Check!!!
 		first_logt=logt_iso(1)
@@ -4034,8 +4039,13 @@ SUBROUTINE SCPmcmcPD12S(SCP,Intestaz,IsocTab,Zvec,Zndxi,Zndxf,TrackTab,nM,Mav,in
 				row_i=size(Isoc,1)
 				allocate(t_iso(row_i)); allocate(logt_iso(row_i))
 				
-				t_iso=Isoc(:,ct)
-				logt_iso=dnint(log10(t_iso)*100)/100
+				if (logtVal.eq.0) then
+					t_iso=Isoc(:,ct)
+					logt_iso=dnint(log10(t_iso)*100)/100
+				else if (logtVal.eq.1) then
+					logt_iso=Isoc(:,ct)
+					logt_iso=dnint(logt_iso*100)/100
+				endif
 				t_iso=10.**logt_iso
 				first_logt=logt_iso(1)
 				last_logt=logt_iso(row_i)
@@ -6852,8 +6862,13 @@ SUBROUTINE SCPmcmcPD12S(SCP,Intestaz,IsocTab,Zvec,Zndxi,Zndxf,TrackTab,nM,Mav,in
 					row_i=size(Isoc,1)
 					allocate(t_iso(row_i)); allocate(logt_iso(row_i))
 				
-					t_iso=Isoc(:,ct)
-					logt_iso=dnint(log10(t_iso)*100)/100
+					if (logtVal.eq.0) then
+						t_iso=Isoc(:,ct)
+						logt_iso=dnint(log10(t_iso)*100)/100
+					else if (logtVal.eq.1) then
+						logt_iso=Isoc(:,ct)
+						logt_iso=dnint(logt_iso*100)/100
+					endif
 					t_iso=10.**logt_iso
 					first_logt=logt_iso(1)
 					last_logt=logt_iso(row_i)
@@ -10908,8 +10923,8 @@ subroutine multipleZisocPhSCP(FeH,I_FeH,Z_iso,model,x,y,logt8,percorso,k,symmZ, 
 	Z_isoLOW=minval(Z_iso)
 	Z_isoUP=maxval(Z_iso)
 	logt8c=logt8 !if the activity check has been done, logt8c=0. 
-		!!logt8 will change in the following as 10**logt8 in the case of PD1.2S model
-	if (strcmp(model,strMod3)) then 
+		!!logt8 will change in the following as 10**logt8 in the case of PD1.2S model with linear t values
+	if (logtVal.eq.0) then 
 		logt8=10.**logt8 !PD1.2S reports t and not logt
 	end if
 	
@@ -11016,9 +11031,9 @@ subroutine multipleZisocPhSCP(FeH,I_FeH,Z_iso,model,x,y,logt8,percorso,k,symmZ, 
 			end if
 			!!Check whether logt has equally spaced steps
 			allocate(logtiso(size(Isoc,1)))
-			if (strcmp(model,strMod3)) then 
+			if (logtVal.eq.0) then
 				logtiso=log10(Isoc(:,clogt))
-			else
+			else if (logtVal.eq.1) then
 				logtiso=Isoc(:,clogt)
 			end if
 			if (.not.isEq(logt8c,0.D0,2)) then !Activity check done
@@ -11044,15 +11059,14 @@ subroutine multipleZisocPhSCP(FeH,I_FeH,Z_iso,model,x,y,logt8,percorso,k,symmZ, 
 			deallocate(IsocTmp)
 			
 			allocate(t_iso(size(Isoc,1))); allocate(logt_iso(size(Isoc,1)))
-			if (strcmp(model,strMod3)) then !age stored in linear scale, not as log
+			if (logtVal.eq.0) then !age stored in linear scale, not as log
 				t_iso=Isoc(:,clogt) 
 				!the index should be ct. It's still called clogt because of the input of the function
 				logt_iso=dnint(log10(t_iso)*100)/100
-				t_iso=10.**logt_iso !in this way t_iso comes from logt having 0 or 5 as 2nd decimal digit
-			else
+			else if (logtVal.eq.1) then
 				logt_iso=dnint(Isoc(:,clogt)*100)/100
-				t_iso=10.**logt_iso
 			end if
+			t_iso=10.**logt_iso !in this way t_iso comes from logt having 0 or 5 as 2nd decimal digit
 			allocate(M_iso(size(Isoc,1))); allocate(logL_iso(size(Isoc,1)))
 			allocate(L_iso(size(Isoc,1))); allocate(logTeff_iso(size(Isoc,1)))
 			allocate(Teff_iso(size(Isoc,1))); allocate(logg_iso(size(Isoc,1)))
@@ -11303,9 +11317,9 @@ subroutine multipleZisocPhSCP(FeH,I_FeH,Z_iso,model,x,y,logt8,percorso,k,symmZ, 
 				end if
 				!!Check whether logt has equally spaced steps
 				allocate(logtiso(size(Isoc1,1)))
-				if (strcmp(model,strMod3)) then 
+				if (logtVal.eq.0) then
 					logtiso=log10(Isoc1(:,clogt))
-				else
+				else if (logtVal.eq.1) then
 					logtiso=Isoc1(:,clogt)
 				end if 
 				if (.not.isEq(logt8c,0.D0,2)) then !Activity check done
@@ -11331,15 +11345,14 @@ subroutine multipleZisocPhSCP(FeH,I_FeH,Z_iso,model,x,y,logt8,percorso,k,symmZ, 
 				deallocate(IsocTmp)
 
 				allocate(t_iso(size(Isoc1,1))); allocate(logt_iso(size(Isoc1,1)))
-				if (strcmp(model,strMod3)) then !age stored in linear scale, not as log
+				if (logtVal.eq.0) then !age stored in linear scale, not as log
 					t_iso=Isoc1(:,clogt) 
 					!the index should be ct. It's still caled clogt because of the input of the function
 					logt_iso=dnint(log10(t_iso)*100)/100
-					t_iso=10.**logt_iso !in this way t_iso comes from logt having 0 or 5 as 2nd decimal digit
-				else
+				else if (logtVal.eq.1) then
 					logt_iso=dnint(Isoc1(:,clogt)*100)/100
-					t_iso=10.**logt_iso
 				end if
+				t_iso=10.**logt_iso !in this way t_iso comes from logt having 0 or 5 as 2nd decimal digit
 				allocate(M_iso(size(Isoc1,1))); allocate(logL_iso(size(Isoc1,1)))
 				allocate(L_iso(size(Isoc1,1))); allocate(logTeff_iso(size(Isoc1,1)))
 				allocate(Teff_iso(size(Isoc1,1))); allocate(logg_iso(size(Isoc1,1)))
@@ -11589,7 +11602,7 @@ subroutine multipleZisocPhSCP(FeH,I_FeH,Z_iso,model,x,y,logt8,percorso,k,symmZ, 
 		end if 
 	end if !If not entered this if, Isoc_i will remain deallocated
 	
-	if (strcmp(model,strMod3)) then 
+	if (logtVal.eq.0) then 
 		logt8=log10(logt8) !Re-set the logt8 as logarithm for the output of Stelle
 	end if
 
@@ -14532,7 +14545,7 @@ subroutine loadMatrix(fileName,matrix,head)
 	READ(f_unit, '(A)', IOSTAT=iol) line
 	do while(iol.eq.0)
 		k=k+1
-		call skipLines(line,ch1,ch2,skip) !trim()
+		call skipLines(trim(line),ch1,ch2,skip) !trim()
 		if (.not.skip) then
 			kx=kx+1
 			ndx(kx)=k
