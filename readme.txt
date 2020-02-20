@@ -1,5 +1,5 @@
 |-----------------------------------------------------------------------------|
-|                                 README FILE                   v1.1_20200206 |
+|                                 README FILE                   v1.2_20200220 |
 |                MCMCI code. Bonfanti & Gillon (2020) [BG20]                  |
 |                  andrea.bonfanti@oeaw.ac.at                                 |
 |                  michael.gillon@uliege.be                                   |
@@ -58,7 +58,11 @@ Input files and folder:
    8. texp: exposure time (s)
 - Lib folder
 Additional files and folders:
-- Ziso.txt 
+- Ziso.txt
+   The list of all Z values. If some Z value is missing among the available
+   isochrones, delete those values from the file. Check if Zi_inf and Zi_sup
+   reported by IsoPD.f90 correspond to the minimum and maximum Z values that
+   are available
 - Tables of isochrones: http://stev.oapd.inaf.it/cgi-bin/cmd
    to be downloaded according to logtstep that is specified in IsoPD.f90 and
    with the Z values (metallicities) that are specified in Ziso.txt
@@ -66,6 +70,12 @@ Additional files and folders:
    (e.g. Z0.01.dat or Z0.017.dat)
    So far mcmcI can deal only Johnson-Cousin and Gaia photometric systems
 - Tables of tracks: https://people.sissa.it/~sbressan/CAF09_V1.2S_M36_LT/
+   Please check whether the header of each file starts with a '#', so that
+   the code interpret it as a comment. If it is not the case, in each folder
+   containing the files of tracks, run the following command from terminal
+   $ sed -i '1s/^/#/' *.DAT
+   For MacOS users: if the previous command doesn't do the job, run
+   $ sed -i. '1s/^/#/' *.DAT
 - EvoZ folder (to be put in the same folder containing Tracks)
 - TracksVel folder (to be put in the same folder containing Tracks)
 - ZAMSdata folder (to be put in the same folder containing Tracks)
@@ -107,7 +117,7 @@ Here follows a list of problems according to our experience and testing:
   fixed(!), thus it’s strongly suggested to update the compiler. We guarantee
   that since gfortran 5.3.1 these functions behave correctly; we haven’t tested
   the behaviour in case 4.6 < gfortran < 5.3
-- ONLY for MacOS user: suffix or operand invalid for ‘movq’
+- ONLY for MacOS users: suffix or operand invalid for ‘movq’
  This is an assembly error, which is not related to the specific gfortran
   compiler. It is likely due to the homebrew/Macport installation. Following
   this answer
@@ -678,7 +688,26 @@ Filenames containing the name of a stellar/planetary parameter may have two
 | 6) Last updates                                                             |
 |-----------------------------------------------------------------------------|
 - 06/02/2020. LD coefficients for both quadratic and nonlinear models in TESS
-   (TE) and Cheops (Ch) TESS (TE) bandpasses now available. Coefficients have
+   (TE) and Cheops (Ch) bandpasses now available. Coefficients have
    been computed from ATLAS models, using the code by Espinoza&Jordan (2015;
    http://arxiv.org/abs/1503.07020)
    Please update quadratic.dat, nonlinear.dat, and mcmcI.f90 files
+- 20/02/2020. Recently released Tables of isochrones display age as logarithm
+   and two additional columns have been added. If you recently downloaded the
+   table of Isochrones, please consider the following items:
+   - set logtVal=1 in IsoPD.f90 if logarithmic values of age are reported in
+    the isochrones.
+   - if needed, update the parameters of the first two lines of IsoPD.f90
+    reporting the column numbers of the following quantities:
+    ct -> age. Now=3
+    cM -> present day mass. Now = 6
+    clogL -> logL. Now = 7
+    clogTe -> logTeff. Now =8
+    clogg -> logg. Now =9
+    cmag1 -> redder magnitude of the desired colour index (B-V or G_BP-G_RP).
+     Now = 28
+    cmag2 -> bluer magnitude of the desired colour index (B-V or G_BP-G_RP).
+     Now = 27
+    cmbol -> bolometric magnitude. Now = 25
+    cmagx -> Gaia magnitude in Gaia grids. Now=26
+
