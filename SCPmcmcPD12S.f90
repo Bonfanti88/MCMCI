@@ -1276,7 +1276,11 @@ SUBROUTINE SCPmcmcPD12S(SCP,Intestaz,IsocTab,Zvec,Zndxi,Zndxf,TrackTab,nM,Mav,in
 			x=BmV
 			x_iso=BmV_iso
 			xx_iso=logTeff_iso
-			cBrif=cBBmV
+			if (idCol.eq.1) then
+				cBrif=cBBmV
+			else
+				cBrif=cBTeff
+			end if
 		end if 
 		if (calibSPEC) then
 			if (.not.isEq(Rf,-1.D0,2)) then
@@ -2616,7 +2620,11 @@ SUBROUTINE SCPmcmcPD12S(SCP,Intestaz,IsocTab,Zvec,Zndxi,Zndxf,TrackTab,nM,Mav,in
 					x=BmV
 					x_iso=BmV_iso
 					xx_iso=logTeff_iso
-					cBrif=cBBmV
+					if (idCol.eq.1) then !probably redundant
+						cBrif=cBBmV
+					else
+						cBrif=cBTeff
+					end if
 					allocate(ageMinDist(size(logt_iso)))
 					ageMinDist=logt_iso(dist_ndx)
 					
@@ -3282,7 +3290,9 @@ SUBROUTINE SCPmcmcPD12S(SCP,Intestaz,IsocTab,Zvec,Zndxi,Zndxf,TrackTab,nM,Mav,in
 		logtlim=-1
 		if (.not.isEq(logRHK,0.D0,2)) then 
 			logtMmod=c0-17.912*(logRHK+DlR)-1.6675*(logRHK+DlR)**2 !modified Mamayek
-			if (logtMmod<logtCutoff5) then 
+			if (logtMmod<first_logt) then
+				logtlim1=first_logt
+			elseif (logtMmod<logtCutoff5) then 
 				logtlim1=logtMmod
 			else
 				logtlim1=logtCutoff5
@@ -3399,9 +3409,9 @@ SUBROUTINE SCPmcmcPD12S(SCP,Intestaz,IsocTab,Zvec,Zndxi,Zndxf,TrackTab,nM,Mav,in
 					end if
 					call InterpLin_M(GyroTab,xtau,cBrif,1,(/ ctau /),tau1,xlow,taulow,xup,tauup)
 					tau=tau1(1)
-					if (.not.isEq(tau,0.D0,2) .and. x>=xlow .and. x<=xup) then 
+					if (.not.isEq(tau,0.D0,2) .and. xtau>=xlow .and. xtau<=xup) then 
 						logt_Barnes=log10(tau/kC*log(P/P0)+kI/(2.*tau)*(P**2-P0**2))-3 ![Gyr]
-						if (10.**logt_Barnes>DtBarnes) then 
+						if (10.**logt_Barnes>(DtBarnes+10.**(first_logt-9))) then !comparison in Gyr 
 							logt_Barnes=log10(10.**logt_Barnes-DtBarnes)+9 ![yrs]
 						else
 							logt_Barnes=first_logt
@@ -3470,7 +3480,7 @@ SUBROUTINE SCPmcmcPD12S(SCP,Intestaz,IsocTab,Zvec,Zndxi,Zndxf,TrackTab,nM,Mav,in
 		deallocate(y_iso)
 		if (.not.isEq(YMg,-100.D0,2).and.FeH_>=-0.2 .and. FeH_<=0.2) then !metall condition
 			t_Nissen=(YMg-aYMg)/bYMg*1.e9 ![yrs]
-			if (t_Nissen>log10(DtNissen)) then
+			if (t_Nissen>(DtNissen+10.**first_logt)) then !comparison in yrs
 				logt_Nissen=log10(t_Nissen-DtNissen) !at least this age
 			else
 				logt_Nissen=first_logt
@@ -3521,7 +3531,7 @@ SUBROUTINE SCPmcmcPD12S(SCP,Intestaz,IsocTab,Zvec,Zndxi,Zndxf,TrackTab,nM,Mav,in
 							& logrho_i,rho_i /),(/size(Iso_i,1),c_i/))
 				!added rho_i 19/9/2017
 			end if
-			allocate(Iso_indx(size(Iso_i,1))) 
+			allocate(Iso_indx(size(Iso_i,1)))
 			call indexx(Iso_i(:,1),Iso_indx)
 			!Check if Iso_i it's overwritten correctly
 			Iso_i=Iso_i(Iso_indx,:)
@@ -4114,7 +4124,11 @@ SUBROUTINE SCPmcmcPD12S(SCP,Intestaz,IsocTab,Zvec,Zndxi,Zndxf,TrackTab,nM,Mav,in
 					x=BmV
 					x_iso=BmV_iso
 					xx_iso=logTeff_iso
-					cBrif=cBBmV
+					if (idCol.eq.1) then
+						cBrif=cBBmV
+					else
+						cBrif=cBTeff
+					end if
 				end if 
 				if (calibSPEC) then
 					if (.not.isEq(Rf,-1.D0,2)) then
@@ -5413,7 +5427,11 @@ SUBROUTINE SCPmcmcPD12S(SCP,Intestaz,IsocTab,Zvec,Zndxi,Zndxf,TrackTab,nM,Mav,in
 							x=BmV
 							x_iso=BmV_iso
 							xx_iso=logTeff_iso
-							cBrif=cBBmV
+							if (idCol.eq.1) then !probably redundant
+								cBrif=cBBmV
+							else
+								cBrif=cBTeff
+							end if
 							allocate(ageMinDist(size(logt_iso)))
 							ageMinDist=logt_iso(dist_ndx)
 							
@@ -6077,7 +6095,9 @@ SUBROUTINE SCPmcmcPD12S(SCP,Intestaz,IsocTab,Zvec,Zndxi,Zndxf,TrackTab,nM,Mav,in
 				logtlim=-1
 				if (.not.isEq(logRHK,0.D0,2)) then 
 					logtMmod=c0-17.912*(logRHK+DlR)-1.6675*(logRHK+DlR)**2 !modified Mamayek
-					if (logtMmod<logtCutoff5) then 
+					if (logtMmod<first_logt) then
+						logtlim1=first_logt
+					elseif (logtMmod<logtCutoff5) then 
 						logtlim1=logtMmod
 					else
 						logtlim1=logtCutoff5
@@ -6195,9 +6215,9 @@ SUBROUTINE SCPmcmcPD12S(SCP,Intestaz,IsocTab,Zvec,Zndxi,Zndxf,TrackTab,nM,Mav,in
 							end if
 							call InterpLin_M(GyroTab,xtau,cBrif,1,(/ ctau /),tau1,xlow,taulow,xup,tauup)
 							tau=tau1(1)
-							if (.not.isEq(tau,0.D0,2) .and. x>=xlow .and. x<=xup) then 
+							if (.not.isEq(tau,0.D0,2) .and. xtau>=xlow .and. xtau<=xup) then 
 								logt_Barnes=log10(tau/kC*log(P/P0)+kI/(2.*tau)*(P**2-P0**2))-3 ![Gyr]
-								if (10.**logt_Barnes>DtBarnes) then 
+								if (10.**logt_Barnes>(DtBarnes+10.**(first_logt-9))) then 
 									logt_Barnes=log10(10.**logt_Barnes-DtBarnes)+9 ![yrs]
 								else
 									logt_Barnes=first_logt
@@ -6269,7 +6289,7 @@ SUBROUTINE SCPmcmcPD12S(SCP,Intestaz,IsocTab,Zvec,Zndxi,Zndxf,TrackTab,nM,Mav,in
 				
 				if (.not.isEq(YMg,-100.D0,2).and.FeH_>=-0.2 .and. FeH_<=0.2) then !metall condition
 					t_Nissen=(YMg-aYMg)/bYMg*1.e9 ![yrs]
-					if (t_Nissen>log10(DtNissen)) then
+					if (t_Nissen>(DtNissen+10.**first_logt)) then
 						logt_Nissen=log10(t_Nissen-DtNissen) !at least this age
 					else
 						logt_Nissen=first_logt
@@ -6937,7 +6957,11 @@ SUBROUTINE SCPmcmcPD12S(SCP,Intestaz,IsocTab,Zvec,Zndxi,Zndxf,TrackTab,nM,Mav,in
 						x=BmV
 						x_iso=BmV_iso
 						xx_iso=logTeff_iso
-						cBrif=cBBmV
+						if (idCol.eq.1) then
+							cBrif=cBBmV
+						else
+							cBrif=cBTeff
+						end if
 					end if 
 					if (calibSPEC) then
 						if (.not.isEq(Rf,-1.D0,2)) then
@@ -8253,7 +8277,11 @@ SUBROUTINE SCPmcmcPD12S(SCP,Intestaz,IsocTab,Zvec,Zndxi,Zndxf,TrackTab,nM,Mav,in
 								x=BmV
 								x_iso=BmV_iso
 								xx_iso=logTeff_iso
-								cBrif=cBBmV
+								if (idCol.eq.1) then !probably redundant
+									cBrif=cBBmV
+								else
+									cBrif=cBTeff
+								end if
 								allocate(ageMinDist(size(logt_iso)))
 								ageMinDist=logt_iso(dist_ndx)
 								
@@ -8923,7 +8951,9 @@ SUBROUTINE SCPmcmcPD12S(SCP,Intestaz,IsocTab,Zvec,Zndxi,Zndxf,TrackTab,nM,Mav,in
 					logtlim=-1
 					if (.not.isEq(logRHK,0.D0,2)) then 
 						logtMmod=c0-17.912*(logRHK+DlR)-1.6675*(logRHK+DlR)**2 !modified Mamayek
-						if (logtMmod<logtCutoff5) then 
+						if (logtMmod<first_logt) then
+							logtlim1=first_logt
+						elseif (logtMmod<logtCutoff5) then 
 							logtlim1=logtMmod
 						else
 							logtlim1=logtCutoff5
@@ -9041,9 +9071,9 @@ SUBROUTINE SCPmcmcPD12S(SCP,Intestaz,IsocTab,Zvec,Zndxi,Zndxf,TrackTab,nM,Mav,in
 								end if 
 								call InterpLin_M(GyroTab,xtau,cBrif,1,(/ ctau /),tau1,xlow,taulow,xup,tauup)
 								tau=tau1(1)
-								if (.not.isEq(tau,0.D0,2) .and. x>=xlow .and. x<=xup) then 
+								if (.not.isEq(tau,0.D0,2) .and. xtau>=xlow .and. xtau<=xup) then 
 									logt_Barnes=log10(tau/kC*log(P/P0)+kI/(2.*tau)*(P**2-P0**2))-3 ![Gyr]
-									if (10.**logt_Barnes>DtBarnes) then 
+									if (10.**logt_Barnes>(DtBarnes+10.**(first_logt-9))) then 
 										logt_Barnes=log10(10.**logt_Barnes-DtBarnes)+9 ![yrs]
 									else
 										logt_Barnes=first_logt
@@ -9116,7 +9146,7 @@ SUBROUTINE SCPmcmcPD12S(SCP,Intestaz,IsocTab,Zvec,Zndxi,Zndxf,TrackTab,nM,Mav,in
 					
 					if (.not.isEq(YMg,-100.D0,2).and.FeH_>=-0.2 .and. FeH_<=0.2) then !metall condition
 						t_Nissen=(YMg-aYMg)/bYMg*1.e9 ![yrs]
-						if (t_Nissen>log10(DtNissen)) then
+						if (t_Nissen>(DtNissen+10.**first_logt)) then
 							logt_Nissen=log10(t_Nissen-DtNissen) !at least this age
 						else
 							logt_Nissen=first_logt
