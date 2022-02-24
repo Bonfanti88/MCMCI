@@ -82,7 +82,7 @@ SUBROUTINE SCPmcmcPD12S(SCP,Intestaz,IsocTab,Zvec,Zndxi,Zndxf,TrackTab,nM,Mav,in
 	DOUBLE PRECISION :: Mlogg,I_Mlogg,Mrho,I_Mrho
 	DOUBLE PRECISION :: y,yl,y_lim,dClim
 	DOUBLE PRECISION :: logtlim,logtMmod,logtlim1,logtlim2,logtlim3,logtlim4
-	DOUBLE PRECISION :: logY,logY_soglia,logY2,logY2_soglia
+	DOUBLE PRECISION :: logY,logY_soglia,logY2,logY2_soglia,logY_isoOld1
 	DOUBLE PRECISION :: Rv,MilowMS,logY_sogliaVsini,xlow,xup
 	DOUBLE PRECISION :: R_Tr,rho_Tr,XT
 	DOUBLE PRECISION :: Omega,tau,logt_Barnes,rhot,logtCutoff,logt8,xx,yy,Zlow,Zup
@@ -250,9 +250,9 @@ SUBROUTINE SCPmcmcPD12S(SCP,Intestaz,IsocTab,Zvec,Zndxi,Zndxf,TrackTab,nM,Mav,in
 			INTEGER ti0,tf0
 		end subroutine selectIsoc
 		
-		subroutine searchTOold(y_iso,logTeff_iso,caliblogL,logt_iso,last_logt,logY_soglia)
+		subroutine searchTOold(y_iso,logTeff_iso,caliblogL,logt_iso,last_logt,logY_soglia,logY_isoOld1)
 			IMPLICIT NONE
-			DOUBLE PRECISION last_logt,logY_soglia
+			DOUBLE PRECISION last_logt,logY_soglia,logY_isoOld1
 			DOUBLE PRECISION, DIMENSION(:), INTENT(in) :: y_iso,logTeff_iso,logt_iso
 			LOGICAL caliblogL
 		end subroutine searchTOold
@@ -392,8 +392,7 @@ SUBROUTINE SCPmcmcPD12S(SCP,Intestaz,IsocTab,Zvec,Zndxi,Zndxf,TrackTab,nM,Mav,in
 	TYPE(itName), ALLOCATABLE :: StarName(:)
 	
 	model="PD1.2S"
-	percorso="/home/bonfanti/Documents/PostDocLiegi/PARSEC1.2S/IsocroneRed/Z" !reduced tables
-	
+		
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
 	!!!!!!!!!!! Input/Output directories !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
@@ -471,10 +470,13 @@ SUBROUTINE SCPmcmcPD12S(SCP,Intestaz,IsocTab,Zvec,Zndxi,Zndxf,TrackTab,nM,Mav,in
 	select case (idCol)
 	case (1)
 		cmag0=cmag1
+		percorso="/home/bonfanti/Documents/PostDocLiegi/PARSEC1.2S/IsocroneRed/Z"
 	case (2)
 		cmag0=cmagx
+		percorso="/home/bonfanti/Documents/PostDocLiegi/PARSEC1.2S/IsocroneGaia/Z"
 	case default
 		cmag0=cmag1
+		percorso="/home/bonfanti/Documents/PostDocLiegi/PARSEC1.2S/IsocroneRed/Z"
 	end select
 	
 	do i=1,1
@@ -3322,10 +3324,10 @@ SUBROUTINE SCPmcmcPD12S(SCP,Intestaz,IsocTab,Zvec,Zndxi,Zndxf,TrackTab,nM,Mav,in
 			logY=-logrho !to let following inequality logY< refer to lowMS stars
 			y_iso=logrho_iso
 		end if 
-		call searchTOold(y_iso,logTeff_iso,caliblogL,logt_iso,last_logt,logY_soglia)
+		call searchTOold(y_iso,logTeff_iso,caliblogL,logt_iso,last_logt,logY_soglia,logY_isoOld1)
 		
 		logY2=logY
-		logY2_soglia=logY_soglia !consider these values later for low MS stars
+		logY2_soglia=(logY_soglia+logY_isoOld1)/2. !consider these values later for low MS stars
 
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -3396,7 +3398,7 @@ SUBROUTINE SCPmcmcPD12S(SCP,Intestaz,IsocTab,Zvec,Zndxi,Zndxf,TrackTab,nM,Mav,in
 					end if 
 				end if 
 			end if 
-			if (vcheck.eqv..true.) then !if vsini or P available should be always true
+			if (vcheck.eqv..true..and.Teff.gt.3233.and.Teff.lt.6428) then !if vsini or P available should be always true
 				if (isEq(vsini,0.D0,2)) then !slow rotating stars for which vsini is reported as zero
 					logtlim2=logtCutoff25 !No +0.05. 
 										  !It's already been taken into account in the definition of logtCutoff25
@@ -3638,7 +3640,7 @@ SUBROUTINE SCPmcmcPD12S(SCP,Intestaz,IsocTab,Zvec,Zndxi,Zndxf,TrackTab,nM,Mav,in
 					deallocate(Isoc_i) 
 				end if 
 			end if 
-		end if 
+		end if
 		
 		!!!only theoretical data _i
 		allocate(Gauss(size(logTeff_i)))
@@ -3830,13 +3832,13 @@ SUBROUTINE SCPmcmcPD12S(SCP,Intestaz,IsocTab,Zvec,Zndxi,Zndxf,TrackTab,nM,Mav,in
 				else
 					yT_iso=Isoc(:,cyT)
 				end if
-				 
+				
 				call ifComputeIsocAge(ZAMSz,cZAMS,logY0,logt_iso,logTeff_iso,yT_iso,I_logTeff,ageIsoc)
 									
 				deallocate(yT_iso)
 			else
 				ageIsoc=1
-			end if 
+			end if
 			
 			Gauss=1./(2.*pi*I_logTeff*I_logL)*e**(-0.5*((logTeff-logTeff_i)/I_logTeff)**2)* &
 					& e**(-0.5*((logL-logL_i)/I_logL)**2)
@@ -6121,10 +6123,10 @@ SUBROUTINE SCPmcmcPD12S(SCP,Intestaz,IsocTab,Zvec,Zndxi,Zndxf,TrackTab,nM,Mav,in
 					logY=-logrho !to let following inequality logY< refer to lowMS stars
 					y_iso=logrho_iso
 				end if 
-				call searchTOold(y_iso,logTeff_iso,caliblogL,logt_iso,last_logt,logY_soglia)
+				call searchTOold(y_iso,logTeff_iso,caliblogL,logt_iso,last_logt,logY_soglia,logY_isoOld1)
 		
 				logY2=logY
-				logY2_soglia=logY_soglia !consider these values later for low MS stars
+				logY2_soglia=(logY_soglia+logY_isoOld1)/2. !consider these values later for low MS stars
 
 				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
 
@@ -6202,7 +6204,7 @@ SUBROUTINE SCPmcmcPD12S(SCP,Intestaz,IsocTab,Zvec,Zndxi,Zndxf,TrackTab,nM,Mav,in
 							end if 
 						end if 
 					end if 
-					if (vcheck.eqv..true.) then !if vsini or P available should be always true
+					if (vcheck.eqv..true..and.Teff.gt.3233.and.Teff.lt.6428) then !if vsini or P available should be always true
 						if (isEq(vsini,0.D0,2)) then !slow rotating stars for which vsini is reported as zero
 							logtlim2=logtCutoff25 !no +0.05.
 							!It's already been taken into account in defining logtCutoff25
@@ -8977,10 +8979,10 @@ SUBROUTINE SCPmcmcPD12S(SCP,Intestaz,IsocTab,Zvec,Zndxi,Zndxf,TrackTab,nM,Mav,in
 						logY=-logrho !to let following inequality logY< refer to lowMS stars
 						y_iso=logrho_iso
 					end if 
-					call searchTOold(y_iso,logTeff_iso,caliblogL,logt_iso,last_logt,logY_soglia)
+					call searchTOold(y_iso,logTeff_iso,caliblogL,logt_iso,last_logt,logY_soglia,logY_isoOld1)
 		
 					logY2=logY
-					logY2_soglia=logY_soglia !consider these values later for low MS stars
+					logY2_soglia=(logY_soglia+logY_isoOld1)/2. !consider these values later for low MS stars
 
 					!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
 
@@ -9058,7 +9060,7 @@ SUBROUTINE SCPmcmcPD12S(SCP,Intestaz,IsocTab,Zvec,Zndxi,Zndxf,TrackTab,nM,Mav,in
 								end if 
 							end if 
 						end if 
-						if (vcheck.eqv..true.) then !if vsini or P available should be always true
+						if (vcheck.eqv..true..and.Teff.gt.3233.and.Teff.lt.6428) then !if vsini or P available should be always true
 							if (isEq(vsini,0.D0,2)) then !slow rotating stars for which vsini is reported as zero
 								logtlim2=logtCutoff25 !No +0.05. 
 								!It's already been taken into account in defining logtCutoff25
@@ -10756,6 +10758,14 @@ subroutine ifComputeIsocAge(ZAMStab,cZAMS,logY0,logt_iso,logTeff_iso,yT_iso,I_lo
 		
 	call findYgivenX_i(yTTeff1,logY0,1,2,logTeMS1)
 	call findYgivenX_i(yTTeff2,logY0,1,2,logTeMS2)
+	if (.not.allocated(logTeMS1)) then !out of bounds as too dim. Take the 1st elem
+		allocate(logTeMS1(1))
+		logTeMS1=(/ yTTeff1(1,2) /)
+	end if
+	if (.not.allocated(logTeMS2)) then !out of bounds as too dim. Take the 1st elem
+		allocate(logTeMS2(1))
+		logTeMS2=(/ yTTeff2(1,2) /)
+	end if
 	deallocate(yTTeff1); deallocate(yTTeff2)
 	
 	allocate(logTeMS(size(logTeMS1)+size(logTeMS2)))
@@ -11016,7 +11026,7 @@ subroutine multipleZisocPhSCP(FeH,I_FeH,Z_iso,model,x,y,logt8,percorso,k,symmZ, 
 	! to be considered besides the one with Z=Z_low 
 	! Considering the steps in Z, isochrone separated by [Fe/H]_step=0.05 are considered
 	! Jorgensen&Lindegren2005 considered a step of 0.04
-	!1.115=1+FeH_step*ln(10) is the reason of geometric progression in Z (FeH_step=0.05)
+	!1.115=1+FeH_step*ln(10) is the common ratio of the geometric progression in Z (FeH_step=0.05)
 	!!!!!!!!!!
 	FeH_step=0.05
 	!!!!!!!!!!
@@ -11743,9 +11753,9 @@ subroutine M2R(logt_iso,mid_n,Isoc,Mi,caliblogL,loggAvail,loggAvailCal,logY,Rv)
 
 end subroutine M2R
 
-subroutine searchTOold(y_iso,logTeff_iso,caliblogL,logt_iso,last_logt,logY_soglia)
+subroutine searchTOold(y_iso,logTeff_iso,caliblogL,logt_iso,last_logt,logY_soglia,logY_isoOld1)
 	IMPLICIT NONE
-	DOUBLE PRECISION last_logt,logY_soglia
+	DOUBLE PRECISION last_logt,logY_soglia,logY_isoOld1
 	DOUBLE PRECISION, DIMENSION(:), INTENT(in) :: y_iso,logTeff_iso,logt_iso
 	LOGICAL caliblogL
 	
@@ -11783,11 +11793,13 @@ subroutine searchTOold(y_iso,logTeff_iso,caliblogL,logt_iso,last_logt,logY_sogli
 	end do 
 	if (caliblogL) then !19/9/2017
 		logY_soglia=logY_isoOld(kOld)-0.2 !decrease arbitrarely of 0.2 to locate a bit under the T.O.
+		logY_isoOld1=logY_isoOld(1)
 	else !logY=logrho o logY=logg
 		logY_soglia=-(logY_isoOld(kOld)+0.2) !With minus to use the inequality logY<logY_soglia,
 											 ! which yields for Y=luminosity
-	end if 
-	
+		logY_isoOld1=-logY_isoOld(1)
+	end if
+		
 	deallocate(logY_isoOld); deallocate(logTeff_isoOld)
 	
 end subroutine searchTOold
