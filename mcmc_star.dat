@@ -1,0 +1,148 @@
+|---------------------------------------------------------------------------|
+|OPTIONS:                                                                   |
+|---------------------------------------------------------------------------|
+|NUMBER_OF_CHAINS                               2                           |
+|LENGTH_OF_EACH_CHAIN_(steps)                   10000                       |
+|BURN-IN_PHASE_FRACTION_(%)                     20                          |
+|STAT_LENGTH_(steps)                            100                         |
+|BIN_SIZE_FOR_LCs_(min):                        7.2                         |
+|DESIRED_SUCCESS_RATE_(%)                       25                          |
+|SERIES_OR_NUMERICAL_SOLUTION_TO_KE_[s-n]       n                           |
+|PRECISION_OF_KE_NUMERICAL_SOLUTION             1.E-8                       |
+|GIBBS_SAMPLER_[y-n]+STAT_LENGTH                y 100                       |
+|MAXADAPT(min=1)                                1.E2                        |
+|GELMAN-RUBIN_TEST_[y-n]                        y                           |
+|COMPUTATION_OF_AUTOCORRELATIONS_[y-n]          n                           |
+|MODEL_ROSSITER_EFFECT_[y-n]                    n                           |
+|MODEL_RV_TIDE_[y-n]                            n                           |
+|FIX_STELLAR_PARAMS[y-n]                        n                           |
+|FIT_Ms+Rs[y-n]                                 n                           |
+|ASSUME_MsRs_RELATION_[y-n+beta+error]          n    1.0  0.                |
+|DERIVE_Ms_FROM_RHOs+Rs[y-n]                    n                           |
+|USE_RHOs+EB_LAW_FOR_Ms+Rs[y-n]                 n                           |
+|IF_EB_LOWER_LIMIT_ON_P[d]                      0.                          |
+|IF_EB_MASS_RANGE[Msun]                         0.3  3.                     |
+|IF_EB_USE_ONLY_TORRES_STARS_[y-n]              n                           |
+|COMPUTE_MASS_FROM_ISOCHRONES_[y-n]				y							|
+|TAKE_INTO_ACCOUNT_M2[y-n]                      n                           |
+|DEDUCE_STELLAR_INCLINATION_[y-n]               n                           |
+|PH_AMPLI_UPPER_LIMIT[y-n]                      n                           |
+|LIMB-DARKENING_LAW_[qd-nl-no]                  qd                          |
+|RAMP_MODEL_[log-exp]                           log                         |
+|DDFs_[y-n-p]+SIGMA                             y   0.0005                  |
+|TTVs_[y-n]                                     n                           |
+|RED_NOISE_TIMESCALE_MIN_MAX(min)               5 300                       |
+|FIX_RED_NOISE_TIMESCALE[y-n]+VALUE(min)        n 60                        |
+|BLISS_MIN_N_DATA_PER_BOX                       5                           |
+|NUMBER_OF_PLANETS                              1                           |
+|MINIMAL_PERIOD_(DAYS)                          0. 0. 0. 0. 0. 0.           |
+|MAXIMAL_PERIOD_(DAYS)                          1.E3 1.E3 1.E3 1.E3 1.E3 1.E3 |
+|MAXIMAL_K_(ms)                                 1.E3 1.E3 1.E3 1.E3 1.E3 1.E3 |
+|MINIMAL_PLANET_RADIUS_(R_earth)                0. 0. 0. 0. 0. 0.           |
+|MAXIMAL_PLANET_RADIUS_(R_earth)                1.E3 1.E3 1.E3 1.E3 1.E3 1.E3 |
+|IRON_LOWER_LIMIT_FOR_PLANETS_[y-n]             y                           |
+|MAXIMAL_TIDAL_ELONGATION                       2.                          |
+|---------------------------------------------------------------------------|
+|DATA:                                                                      |
+|---------------------------------------------------------------------------|
+|NUMBER_OF_LCs:  0                                                          |
+| Fi 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15  CF  O BO BM OF UT   HB    GR+O    |
+|NUMBER_OF_RV_TIME-SERIES_+_TREND_ORDER:  0   0                             |
+|  Jit   1 2 3 4 5 O BO UT Rem                                              |
+|NUMBER_OF_TRANSIT_TIMINGS:                                              n  |
+|NUMBER_OF_OCCULTATION_TIMINGS:                                          n  |
+|---------------------------------------------------------------------------|
+|STELLAR PARAMETERS VALUES + PRIOR OPTIONS                                  |
+|---------------------------------------------------------------------------|
+|MASS_+_ERROR_(Msun)_+[n-y-p]                  1.45         0.1           y |
+|RADIUS_+_ERROR_(Rsun)_+[n-y-p]                2.848        0.032         p |
+|RHO_+_ERROR_(rho_sun)_+[n-p-y]                1.4          0.2           n |
+|LUMINOSITY_+_ERROR_(Lsun)_+[n-p]              0.000524     0.000034      n |
+|LOGG_+_ERROR_+[n-p-y]                         4.63         0.1           n |
+|TEFF_+_ERROR_(K)+[n-p]                        5414         66            p |
+|[FEH]_+_ERROR_+[p-y]                          0.25         0.05          p |
+|VTURB_+_ERROR_(kms-1)                         1.0          0.2             |
+|VSINI_+_ERROR_(kms-1)_+[n-p-y]                2.7          0.5           y |
+|PROT_+_ERROR_(days)_+[n-y]                    42.3         0.1           n |
+|F2_+_ERROR_+[y-n-p]                           1.1          0.1           n |
+|LOGRHK_+_ERROR_+_[n-y]                        -5.02        0.06          n |
+|[YMg]_+_ERROR_+_[n-y]                         0.           0.            n |
+|NuMax_+_ERROR_(uHz)_+_[n-y]                   3200.        100.          n |
+|DeltaNu_+_ERROR_(uHz)_+_[n-y]                 145.         15.           n |
+|APPARENT_MAGNITUDE_+_[n-p-y]                  5.57         0.            n |
+|COLOR_INDEX_+_ERR_+_ID_+_[n-p]                0.99         0.03   1      n |
+|DISTANCE_(pc)_+_[n-p-y]					   6.5325       0.0038        n |
+|---------------------------------------------------------------------------|
+|JUMP PARAMETERS: INITIAL VALUES + ERRORS + FIT OPTIONS[y,n,p,j for P]      |
+|---------------------------------------------------------------------------|
+|DF_+_ERROR                                     0.           0.           n |
+|TIDAL_ELONGATION_+_ERROR                       0.           0.           n |
+|IMPACT_PARAMETER_+_ERROR                       0.           0.           n |
+|ECLIPSE_DURATION_+_ERROR_(day)                 0.           0.           n |
+|T0_+_ERROR_(BJD)                               0.           0.           n |
+|PERIOD_+_ERROR_(day)                           0.           0.           n |
+|EXCENTRICITY_+_ERROR                           0.           0.           n |
+|OMEGA_+_ERROR_(degree) 	                	0.           0.             |
+|ERROR_SQRT(E)COSW+SQRT(E)SINW                  0.           0.             |
+|K_+_ERROR_(ms-1)                               0.           0.           n |
+|BETA_+_ERROR_(degree)                          0.           0.           n |
+|ERROR_SQRT(VSINI)COSB+SINB                     0.0          0.0            |
+|---------------------------------------------------------------------------|
+|FILTERS: OCC_DEPTH+ERROR, DIL+ERROR, PH_A_(LEB)_O+ERRORS                   |
+|OCC+LD+PH_FIT_OPTION[y-n-p] (+ LD VALUES/ERRORS)                           |
+|---------------------------------------------------------------------------|
+|---------------------------------------------------------------------------|
+|NORMAL PRIOR ON DF FOR THE WHITE LCs: DF+ERROR                             |
+|---------------------------------------------------------------------------|
+|---------------------------------------------------------------------------|
+
+
+README:
+------- 
+
+1. PHOTOMETRIC DATA:
+Name: phot0001.txt, phot0002.txt, etc.
+File format: JD-2450000, flux, error, x, y, fwhm, fwhm_x, fwhm_y, sky, airmass, texp (s) 
+If Option 14 GT 0 (PLD), 9 more columns are required
+Input format: 
+- Fi = filter[S+uvby,S+1234,Ke,Co,J+UBVRIJHK,ugriz+',TE,Ch] 
+- 1 = time model order[-1:4]
+- 2 = airmass model order[0:4]
+- 3 = FWHM model order[0:4]
+- 4 = FWHM_x model order[0:4]
+- 5 = FWHM_y model order[0:4]
+- 6 = sky model order[0:4]
+- 7 = x-y model order[0:4]
+- 8 = x-y-fwhm-fwhm_x-fwhm_y model order[0:1]                
+- 9 = sinus numbers [0:4]                 
+- 10 = ramp model order[0:2]    
+- 11 = jump numbers[0:4] 
+- 12 = jump model order[0:2]    
+- 13 = offset numbers [0:4]               
+- 14 = PLD model order?[0:2] 
+- 15 = flare numbers [0:4]      
+- CF = error correction factor        
+- WS = write baseline PDF?[y/n]   
+- O = oversample model?[y/n]              
+- BO = oversampling(s)
+- OF = old format?[y/n]    
+- UT = transform times from UTC to TDB?[y/n]     
+- HB = correction HJD to BJD in day                      
+- GR+O = group+order [ex:1 2; default= 0 0]            
+For each LC: below the main line comes a line with the sinus periods+errors,
+then a line with the jump time+error, then a line with the offset times.      
+
+2. RV DATA
+Name: rv0001.txt, rv0002.txt, etc.
+File format: JD-2450000, rv (km/s), error (km/s), fwhm (km/s), contrast (%), bis (km/s), logR'HK, texp (s)
+Input format: 
+- Np = number of points                                                         
+- 1 = time model order[0:4]                                                     
+- 2 = fwhm model order[0:4]                
+- 3 = bisector model order[0:4]
+- 4 = contrast model order[0:4] 
+- 5 = logr'hk model order[0:4]           
+- O = oversample model?[y/n]      
+- BO = oversampling(s)             
+- Rem = remark    
+      
