@@ -8113,9 +8113,11 @@ PROGRAM MCMCI
   ENDIF
  
   DO j=1,npla
-    WRITE(*,'(A8,1x,I2)') 'PLANET ',j
-    WRITE(444,'(A8,1x,I2)') 'PLANET ',j
-    WRITE(445,'(A8,1x,I2)') 'PLANET ',j
+    if(.not.(isoch.eq.'y'.and.ntr.eq.0.and.nrv.eq.0))then !not in case of the IsochPlacement only
+      WRITE(*,'(A8,1x,I2)') 'PLANET ',j
+      WRITE(444,'(A8,1x,I2)') 'PLANET ',j
+      WRITE(445,'(A8,1x,I2)') 'PLANET ',j
+    end if
     let1=CHAR(48+j)
     DO k=1,11
       test=0
