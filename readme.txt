@@ -1,5 +1,5 @@
 |-----------------------------------------------------------------------------|
-|                                 README FILE                   v1.2_20200220 |
+|                                 README FILE                   v1.3_20220224 |
 |                MCMCI code. Bonfanti & Gillon (2020) [BG20]                  |
 |                  andrea.bonfanti@oeaw.ac.at                                 |
 |                  michael.gillon@uliege.be                                   |
@@ -68,7 +68,7 @@ Additional files and folders:
    with the Z values (metallicities) that are specified in Ziso.txt
    Each grid of isochrones has to be named as "Z"+Z numerical value+".dat"
    (e.g. Z0.01.dat or Z0.017.dat)
-   So far mcmcI can deal only Johnson-Cousin and Gaia photometric systems
+   So far mcmcI can deal with only Johnson-Cousin and Gaia photometric systems
 - Tables of tracks: https://people.sissa.it/~sbressan/CAF09_V1.2S_M36_LT/
    Please check whether the header of each file starts with a '#', so that
    the code interpret it as a comment. If it is not the case, in each folder
@@ -80,13 +80,36 @@ Additional files and folders:
 - TracksVel folder (to be put in the same folder containing Tracks)
 - ZAMSdata folder (to be put in the same folder containing Tracks)
 - tauBarnesKim2010.txt
+- Lib folder
 
 Please update all the directories that are specified in the SCPmcmcPD12S.f90
  and mcmcI.f90 source files with yours. Search for 'bonfanti' to easily find
  them. In case the CHARACTER length of some string to be modified is specified,
  update it
- '/home/bonfanti/Documents/ArticoloTesi/TracceLeo/' refers to very old Padova
+ In particular, within SCPmcmcPD12S:
+ - percorso: path containing the isochrones. Keep the final 'Z' as it is the
+  beginning of the isochrone filenames
+  /home/bonfanti/Documents/PostDocLiegi/PARSEC1.2S/IsocroneRed/ replace with
+  your local path where the isochrones listing the UBVRIJHK photometric system
+  are stored
+  /home/bonfanti/Documents/PostDocLiegi/PARSEC1.2S/IsocroneGaia/ replace with
+  your local path where the isochrones listing the Gaia photometric system
+  are stored
+ - TrPath: path containing the tracks
+  /home/bonfanti/Documents/ArticoloTesi/TracceLeo/ refers to very old Padova
   models and can be ignored
+  /home/bonfanti/Documents/PostDocLiegi/PARSEC1.2S/Tracce/ replace with your
+  local path where tracks are stored
+ - tracceLeo: path containing the tracks
+ - EvoZ: path containing the EvoZ folder (to be put in the same folder
+  containing the tracks). Replace with your local path and keep the final 'M'
+  as it is the beginning of the filenames there
+ In particular, within mcmcI.f90:
+ - Barnes: path containing the tauBarnesKim2010.txt file
+ - /home/bonfanti/Documents/TopCat/Z_iso.txt replace with your local path where
+  the Z_iso.txt file is stored
+ - /home/bonfanti/Documents/PostDocLiegi/MCMC_Andrea/Lib/ replace with your
+  local path containing the LD, eb, and tai-utc files
 
 
 |-----------------------------------------------------------------------------|
@@ -682,7 +705,12 @@ Filenames containing the name of a stellar/planetary parameter may have two
    phot0001.txt; phot0002.txt; phot0003.txt; phot0004.txt
 - 1 RV time-series
    rv0001.txt
-   
+- A filled-in mcmc.dat (renamed as mcmc_star.dat to avoid confusion) showing
+   how to deal with the Isocrone placement only. Here the isochronal stellar
+   parameters are retrieved starting from the following input set
+   (Teff, [Fe/H], R*, vsini). All the stellar parameters marked with 'n' are
+   simply ignored by the code, no matter of their values.
+
 
 |-----------------------------------------------------------------------------|
 | 6) Last updates                                                             |
@@ -710,4 +738,10 @@ Filenames containing the name of a stellar/planetary parameter may have two
      Now = 27
     cmbol -> bolometric magnitude. Now = 25
     cmagx -> Gaia magnitude in Gaia grids. Now=26
-
+- 24/02/2022. Code set-up also to perform the Isochrone placement only. To this
+   end, isoch='y', MASS and RADIUS have to be set as jump parameters, TEFF and
+   [FEH] have to set as 'p', and one further prior info shall be provided (e.g.
+   RADIUS or LOGG or RHO). All planetary parameters shall be flagged as 0. and
+   not jumping ('n'). Number of LCs and RV time series have to be set to 0 and
+   all the lines displaying the detrending terms are absent.
+   NUMBER_OF_PLANETS=1 is required by the code, but that's just a fake
