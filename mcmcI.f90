@@ -10,10 +10,11 @@ PROGRAM MCMCI
   IMPLICIT NONE
 
   INTEGER :: abs_errorm,abs_errorp,ord_errorm,ord_errorp,ncol_file,abs_val,ord_val
-  INTEGER :: nbinh,nu,i,j,ntr,na,nburn,i2,dof,ntiming,k,test,mco,l,nb,loc,nchain
+  INTEGER :: nbinh,nu,i,j,ntr,na,nburn,i2,dof,ntiming,k,test,mco,mco2,l,nb,loc,nchain
   INTEGER :: ntimingoc, en_int3sig,nenoch2,limmed(5),nb2,n2,io,nbliss,k3,l3       
   INTEGER :: nrv,nat,lim1,lim2,ce,t,link,isze,statlen,soluce,numbin,l2,nbliss2
   INTEGER :: npla,ordertrendrv,medi,be_int1sig,be_int3sig,en_int1sig,nbox,nbox2
+  INTEGER :: medis,limmeds(5)
   INTEGER :: ngroup=0,tmax=0,statlen2,nttvmax,epochtime
   INTEGER :: nsystr,order,gibbscount,nburn2,ppdum,nubin,di,nmpix,nmpiy,k2,dtred
   INTEGER, PARAMETER :: ne3=50                    
@@ -34,6 +35,7 @@ PROGRAM MCMCI
   INTEGER, DIMENSION(:), ALLOCATABLE :: flarenumber,nttv
   INTEGER, DIMENSION(:), ALLOCATABLE :: Zndxi,Zndxf,nM,nMt,iZt,indxZt,Vndxi,Vndxf
   INTEGER, DIMENSION(:), ALLOCATABLE :: ZAndxi,ZAndxf,Endxi,Endxf,rowIO
+  INTEGER, DIMENSION(:), ALLOCATABLE :: nda
   INTEGER, DIMENSION(:,:), ALLOCATABLE :: nlast,nbin,np_bin,npjh,xbox,ybox,epochtr
   INTEGER, DIMENSION(:,:), ALLOCATABLE :: Tndxi,Tndxf
 
@@ -340,6 +342,20 @@ PROGRAM MCMCI
 	  INTEGER, DIMENSION(:,:), INTENT(in) :: Tndxi,Tndxf
 	  CHARACTER(LEN=171) :: Intestaz
 	end subroutine SCPmcmcPD12S
+	
+	subroutine find(b,ix)
+		IMPLICIT NONE
+		LOGICAL, DIMENSION(:), INTENT(in) :: b
+		INTEGER, DIMENSION(:), ALLOCATABLE :: ix
+	end subroutine find
+	
+	function isEq_v(x1,x2,n)
+		IMPLICIT NONE
+		DOUBLE PRECISION, DIMENSION(:), INTENT(in) :: x1
+		DOUBLE PRECISION, INTENT(in) :: x2
+		INTEGER, INTENT(in) :: n
+		LOGICAL, DIMENSION(size(x1)) :: isEq_v
+	end function isEq_v
 		
   end interface
 
@@ -1275,6 +1291,9 @@ PROGRAM MCMCI
 	Rinp=-1.
 	I_Rinp=-1.
   end if
+  if(isoch.eq.'y'.and.ntr.eq.0.and.nrv.eq.0.and.priorrad.eq.'n')then !only perform the IsochPlacement
+    print*, 'R* must be set as a jump parameter, either p or y'; stop
+  end if
   READ(11,*) dum2,trho2,strho2,priorrho
   IF(priorrho.EQ.'p'.AND.ABS(strho2).LT.1.E-10)THEN
     PRINT*, 'The normal prior PDF for rho* has a zero width!'; STOP
@@ -1494,6 +1513,11 @@ PROGRAM MCMCI
        sdur_ini(i)=0.
        isjump(i,3)='n'
      ENDIF
+     if(isoch.eq.'y'.and.ntr.eq.0.and.nrv.eq.0)then !only perform the IsochPlacement
+       dur(i,1)=0.
+       sdur_ini(i)=0.
+	   isjump(i,3)='n'
+     end if
      if (fitmsrs.eq.'n'.and.fixstellar.eq.'n') then
 	  	if (isEq(dur(i,1),0.D0,5)) then
 	  	  if (isoch.eq.'y') then
@@ -1526,6 +1550,9 @@ PROGRAM MCMCI
      t0(i,1) = t0(i,1) - 0.
      t0_ini(i) = t0(i,1)
      READ(11,*) dum2,per(i,1),sper_ini(i),isjump(i,5)
+     if(isoch.eq.'y'.and.ntr.eq.0.and.nrv.eq.0)then !only perform the IsochPlacement
+     	per(i,1)=10. !just a fake
+     end if
      IF(isjump(i,5).NE.'n')THEN
         njump=njump+1; njump_rv=njump_rv+1; npara=npara+1
         IF(gelman.EQ.'y'.AND.nchain.GT.1.AND.test_per.EQ.0)THEN
@@ -3759,6 +3786,7 @@ PROGRAM MCMCI
 			close(4)
 			if (.not.isEq(Z_iso(1),Zi_inf,5).or..not.isEq(Z_iso(size(Z_iso)),Zi_sup,3)) then
 				print*,'Specified Zi_inf or Zi_sup inconsistent with available Z values'
+				print*,'Check either Ziso.txt or IsoPD.f90'
 				stop
 			end if
 			
@@ -3921,15 +3949,16 @@ PROGRAM MCMCI
         end if
       ENDIF
     ENDDO
-    !print*,'MEAN rho',rho(link)  
     DO i=1,npla
       a_R(i,link) = (((rho(link))/0.0134235)*per(i,link)**2)**(1./3.) 
       a_R(i,link) = a_R(i,link)*m2_m1(i)
-      IF((a_R(i,link)*(1-exc(i,link))).LE.(1+rr(i,link)))THEN
-  !       PRINT*, 'Boum!'
-         accepted(link)='n'
-      ENDIF
-!      print*,'Dur condition',((1+rr(i,link))**2 - temp3(i)**2)
+      if(.not.(isoch.eq.'y'.and.ntr.eq.0.and.nrv.eq.0))then !not in case of the IsochPlacement only
+		  IF((a_R(i,link)*(1-exc(i,link))).LE.(1+rr(i,link)))THEN
+	  !       PRINT*, 'Boum!'
+		     accepted(link)='n'
+		  ENDIF
+	  end if
+!      if (mod(link,100).eq.0) print*,'Dur condition',((1+rr(i,link))**2 - temp3(i)**2)
       IF(((1+rr(i,link))**2 - temp3(i)**2).GT.0.)THEN
         ! Approximation in Andrew's powerpoint
           dur(i,link) = (per(i,link)/a_R(i,link))*(SQRT((1+rr(i,link))**2 - temp3(i)**2)/pi)* &
@@ -4111,6 +4140,13 @@ PROGRAM MCMCI
 				write(*,'(A20,F5.2,A2)') 'Isochrones storage ',finish-start,' s'
 				
 				call cpu_time(start)
+!				print*,'Minf',Minf
+!				print*,'Msup',Msup
+!				print*,'Mstep',Mstep
+!				print*,'MlowMS',MlowMS
+!				print*,'Ztvec',Ztvec
+!				print*,'nMt',nMt
+!				print*,'fnd05t',fnd05t
 				call storeTracks_V_ZAMS(Minf,Msup,Mstep,MlowMS,Ztvec,nMt,fnd05t,Mavail,TrackTab,Tndxi,Tndxf, &
 					& velTrackTab,Vndxi,Vndxf,ZAMStab,ZAndxi,ZAndxf)
 				call cpu_time(finish)
@@ -5981,7 +6017,7 @@ PROGRAM MCMCI
       DO k=1,npla
         WRITE(*,108) ' e =                ',exc(k,link)
         WRITE(*,109) ' omega =            ',omega(k,link), '    deg'  
-        WRITE(*,108) ' Rs/R* =            ',rr(k,link)
+        WRITE(*,108) ' Rp/R* =            ',rr(k,link)
         WRITE(*,108) ' a/R* =             ',a_R(k,link)
         WRITE(*,108) ' b_tr =             ',b2(k,link)
         WRITE(*,108) ' b_oc =             ',b3(k,link)
@@ -5991,6 +6027,7 @@ PROGRAM MCMCI
       WRITE(*,'(A14,I3)') ' N_parameters= ',INT(npara)
       PRINT*, '--------------------------------------------'
     ENDIF
+    
 
 ! METROPOLIS TEST  
     IF(MOD(link-1,nat).EQ.0.OR.link.EQ.1.AND.accepted(link).EQ.'y')THEN
@@ -6014,13 +6051,15 @@ PROGRAM MCMCI
         CALL RANDOM_NUMBER(harvest)
         IF(harvest.LE.thrown) ok='y'
       ENDIF
-      DO k=1,npla
-        IF(radius_p(k,link).LT.rpdo) ok='n'
-        IF(radius_p(k,link).GT.rpup) ok='n'
-        IF(ironlow.EQ.'y'.AND.testiron(k).LT.1)THEN
-          ok='n'
-        ENDIF
-      ENDDO
+      if(.not.(isoch.eq.'y'.and.ntr.eq.0.and.nrv.eq.0))then !not in case of the IsochPlacement only
+		  DO k=1,npla
+		    IF(radius_p(k,link).LT.rpdo) ok='n'
+		    IF(radius_p(k,link).GT.rpup) ok='n'
+		    IF(ironlow.EQ.'y'.AND.testiron(k).LT.1)THEN
+		      ok='n'
+		    ENDIF
+		  ENDDO
+	  end if
     ELSE
       ok='n'
     ENDIF
@@ -6029,6 +6068,25 @@ PROGRAM MCMCI
     ELSE
       accepted(link)='n'
     ENDIF
+    
+!    if (mod(link,100).eq.0) print*,'radius',radius_s(link)
+!    if (mod(link,100).eq.0) print*,'radius_Isoch',radius_Isoch
+!    if (mod(link,100).eq.0) print*,'Inc radius_Isoch',dradius_Isoch
+!    if (mod(link,100).eq.0) print*,'mass',mass_s(link)
+!    if (mod(link,100).eq.0) print*,'mass_Isoch',mass_Isoch
+!    if (mod(link,100).eq.0) print*,'Inc mass_Isoch',dmass_Isoch
+!    if (mod(link,100).eq.0) print*,'teff',temp_s(link)
+!    if (mod(link,100).eq.0) print*,'teff-1',temp_s(link-1)
+!    if (mod(link,100).eq.0) print*,'FeH',met_s(link)
+!    if (mod(link,100).eq.0) print*,'FeH-1',met_s(link-1)
+!    if (mod(link,100).eq.0) print*,'MeritMass',((mass_s(link)-mass_Isoch)/dmass_Isoch)**2
+!    if (mod(link,100).eq.0) print*,'MeritRadius',((radius_s(link)-radius_Isoch)/dradius_Isoch)**2
+!    if (mod(link,100).eq.0) print*,'MeritTeff',((temp_s(link)-spec(1))/sspec(1))**2
+!    if (mod(link,100).eq.0) print*,'MeritFeH',((met_s(link)-spec(3))/sspec(3))**2
+!    if (mod(link,100).eq.0) print*,'Merit',merit(link)
+!    if (mod(link,100).eq.0) print*,'Merit-1',merit(link-1)
+!    if (mod(link,100).eq.0) print*,'accepted AFTER',accepted(link)
+    
 
     IF(ok.EQ.'n')THEN    !If jump fails, go back to the previous values for all parameters
       DO k=1,npla
@@ -6926,7 +6984,7 @@ PROGRAM MCMCI
    
    !Writing I/O consistency in models
    if (isoch.eq.'y') then
-   	print*,'IO consistency rate in models',rowTot/na
+   	write(*,'(A30,F4.2)') 'IO consistency rate in models ',dble(rowTot)/dble(na)
    	open(unit=7,file='rowIO.res')
    	do j=1,na
    		write(7,*) rowIO(j)
@@ -8668,7 +8726,18 @@ PROGRAM MCMCI
 			fil2 = 'age.res'; graphfile = 'age_h.sm'
 			xlabel = '      age           '
 			texb =' Age =              ';texunit='    Gyr'
-			bf_val=age(soluce); temp1D=age_end(:); test=1
+			bf_val=age(soluce)
+			call find(.not.isEq_v(age_end(:),0.D0,1),nda) !skip flagged values
+			if (allocated(nda)) then
+			  print*,'size(nda)',size(nda)
+			  if (size(nda).gt.size(age_end)/2.) then !flagged ages are a minority
+			    !then show the age. Otherwise the star is to faint and no reasonable
+			    !isochronal age may be provided
+			    temp1D=age_end(nda)
+			    test=1
+			  end if
+			end if
+			print*,'testAge',test
 		  end if
         CASE(10)  ! VsinI*
           fil2 = 'vsini.res'; graphfile = 'vsini_h.sm'
@@ -8698,14 +8767,25 @@ PROGRAM MCMCI
           ENDIF
      END SELECT
      IF(test.EQ.1)THEN
+       if (k.eq.9) then !age
+          mco2=size(nda)
+       else
+          mco2=mco
+       end if
+       medis = INT(mco2/2)
+	   limmeds(5) = medis
+	   limmeds(1) = CEILING((mco2*(1.-0.683))/2.)
+	   limmeds(2) = limmeds(1) + FLOOR(mco2*0.683)
+	   limmeds(3) = CEILING((mco2*(1.-0.997))/2.)
+	   limmeds(4) = limmeds(3) + FLOOR(mco2*0.997)
        OPEN(UNIT=124,FILE=fil2)
-       DO l=1,mco
+       DO l=1,mco2
           WRITE(124,*) l,temp1D(l)
        ENDDO
        CLOSE(124)    
-       CALL SORT(mco,temp1D)
-       CALL PDLIM(mco,temp1D,bf_val,limmed,limpd)
-       medi_val = temp1d(limmed(5))
+       CALL SORT(mco2,temp1D)
+       CALL PDLIM(mco2,temp1D,bf_val,limmeds,limpd)
+       medi_val = temp1d(limmeds(5))
        CALL HISTO(fil2,graphfile,bf_val,medi_val,xlabel,nbinh)
        CALL PDFSCREEN(texb,texunit,bf_val,medi_val,limpd,gelman,gelmanval, & 
         & nchain,jump)
@@ -8739,340 +8819,342 @@ PROGRAM MCMCI
       ENDIF
     ENDDO
   ENDIF
+  
+  if (ntr.gt.0.or.nrv.gt.0) then
+	  DO j=1,npla
+		WRITE(*,'(A8,1x,I2)') 'PLANET ',j
+		WRITE(444,'(A8,1x,I2)') 'PLANET ',j
+		WRITE(445,'(A8,1x,I2)') 'PLANET ',j
+		let1=CHAR(48+j)
+		DO k=1,42
+		  test=0
+		  SELECT CASE (k)
+		    CASE(1) ! Transit depth
+		      IF(isjump(j,1).EQ.'n')THEN
+		        fil2 = 'df' // let1 // '.res'; graphfile = 'df'//let1//'_h.sm'
+		        xlabel = '         dF         '
+		        texb =' dF =               ';texunit='       ';bf_val=dF(j,soluce);&
+		          & temp1D=dF_end(j,:); test=1
+		      ENDIF   
+		    CASE(2) ! Tidal elongation
+		      IF(isjump(j,1).EQ.'n')THEN
+		        fil2 = 'tel' // let1 // '.res'; graphfile = 'tel'//let1//'_h.sm'
+		        xlabel = '         TE         '
+		        texb =' TE =               ';texunit='       ';bf_val=tidel(j,soluce);&
+		          & temp1D=tidel_end(j,:); test=1
+		      ENDIF        
+		    CASE(3)  ! Transit circular impact parameter
+		      IF(isjump(j,2).EQ.'n')THEN
+		        fil2 = 'b' // let1 // '.res'; graphfile = 'b'//let1//'_h.sm'
+		        xlabel = '        b [R*]      '
+		        texb =' b =                ';texunit='     R*';bf_val=b(j,soluce);&
+		          & temp1D=b_end(j,:);test=1 
+		      ENDIF
+		    CASE(4)  ! Transit duration W
+		      IF(isjump(j,3).EQ.'n')THEN
+		        fil2 = 'dur' // let1 // '.res'; graphfile = 'dur'//let1//'_h.sm'
+		        xlabel = '        W [d]       '
+		        texb =' W =                ';texunit='   days';bf_val=dur(j,soluce);&
+		          & temp1D=dur_end(j,:);test=1
+		      ENDIF 
+		    CASE(5)  ! Inferior conjunction time
+		      IF(isjump(j,4).EQ.'n')THEN
+		        fil2 = 't0_' // let1 // '.res'; graphfile = 't0_'//let1//'_h.sm'
+		        xlabel = '       T0 [JD]      '
+		        texb =' T0 =               ';texunit='     JD';bf_val=t0(j,soluce);&
+		          & temp1D=t0_end(j,:);test=1
+		      ENDIF
+		    CASE(6)  ! Orbital period P
+		      IF(isjump(j,5).EQ.'n')THEN 
+		        fil2 = 'per' // let1 // '.res'; graphfile = 'per'//let1//'_h.sm'
+		        xlabel = '        P [d]       '
+		        texb =' P =                ';texunit='   days';bf_val=per(j,soluce);& 
+		          & temp1D=per_end(j,:);test=1
+		      ENDIF 
+		    CASE(7)  ! sqrt(e)cosw 
+		      IF(isjump(j,6).EQ.'n')THEN
+		        fil2 = 'secosw' // let1 // '.res'; graphfile = 'secosw'//let1//'_h.sm'
+		        xlabel = '     sqrt(e)cosw    '
+		        texb =' sqrt(e)cosw =      ';texunit='       ';bf_val=secosw(j,soluce);&
+		          & temp1D=secosw_end(j,:);test=1
+		      ENDIF   
+		    CASE(8)  ! sqrt(e)sinw
+		      IF(isjump(j,6).EQ.'n')THEN 
+		        fil2 = 'sesinw' // let1 // '.res'; graphfile = 'sesinw'//let1//'_h.sm'
+		        xlabel = '     sqrt(e)sinw    '
+		        texb =' sqrt(e)sinw =      ';texunit = '       '
+		        bf_val=sesinw(j,soluce);temp1D=sesinw_end(j,:);test=1
+		      ENDIF    
+		    CASE(9)  ! K2 
+		      IF(isjump(j,7).EQ.'n')THEN
+		        fil2 = 'k2_' // let1 // '.res'; graphfile = 'k2_'//let1//'_h.sm'
+		        xlabel = '         K2         '
+		        texb =' K2 =               ';texunit = '       ';bf_val=kb(j,soluce);&
+		          & temp1D=kb_end(j,:);test=1
+		      ENDIF
+		    CASE(10)  ! sqrt(VsinI)cosB 
+		      IF(isjump(j,8).EQ.'n'.AND.j.EQ.1.AND.nrv.GT.0)THEN
+		        fil2 = 'svsinicosb' // let1 // '.res'
+		        graphfile = 'svsinicosb'//let1//'_h.sm'
+		        xlabel = '   sqrt(VsinI)cosB  '
+		        texb =' sqrt(VsinI)cosB =  ';texunit = '       '
+		        bf_val=svsinicosbeta(soluce);temp1D=svsinicosbeta_end;test=1
+		      ENDIF
+		    CASE(11)  ! sqrt(VsinI)sinB 
+		      IF(isjump(j,8).EQ.'n'.AND.j.EQ.1.AND.nrv.GT.0)THEN
+		        fil2 = 'svsinisinb' // let1 // '.res'
+		        graphfile = 'svsinisinb'//let1//'_h.sm'
+		        xlabel = '   sqrt(VsinI)sinB  '
+		        texb =' sqrt(VsinI)sinB =  ';texunit = '       '
+		        bf_val=svsinisinbeta(soluce);temp1D=svsinisinbeta_end;test=1
+		      ENDIF
+		    CASE(12)  ! Superior conjunction time
+		      fil2 = 'oct' // let1 // '.res'; graphfile = 'oct'//let1//'_h.sm'
+		      xlabel = '     Toc [JD]       '
+		      texb =' Tocc =             ';texunit='     JD';bf_val=octime(j,soluce);&
+		        & temp1D=octime_end(j,:); test=1  
+		    CASE(13)  ! Rp/R*
+		      fil2 = 'rr' // let1 // '.res'; graphfile = 'rr'//let1//'_h.sm'
+		      xlabel = '       Rp/Rs        '
+		      texb =' Rp/Rs =            ';texunit='       ';bf_val=rr(j,soluce);&
+		        & temp1D=rr_end(j,:); test=1
+		    CASE(14)  ! a/R*
+		      fil2 = 'ar' // let1 // '.res'; graphfile = 'ar'//let1//'_h.sm'
+		      xlabel = '        a/Rs        '
+		      texb =' a/Rs =             ';texunit='       ';bf_val=a_R(j,soluce);&
+		        & temp1D=a_R_end(j,:); test=1
+		    CASE(15)  ! RV semi-amplitude
+		      fil2 = 'k' // let1 // '.res'; graphfile = 'k'//let1//'_h.sm'
+		      xlabel = '      K [m/s]       '
+		      texb =' K =                ';texunit='    m/s';bf_val=ka(j,soluce);&
+		        & temp1D=ka_end(j,:); test=1
+		    CASE(16)  ! Excentricity
+		      fil2 = 'e' // let1 // '.res'; graphfile = 'e'//let1//'_h.sm'
+		      xlabel = '         e          '
+		      texb =' e =                ';texunit='       ';bf_val=exc(j,soluce);&
+		        & temp1D=exc_end(j,:); test=1
+		    CASE(17)  ! Argument of pericenter
+		      fil2 = 'omega' // let1 // '.res'; graphfile = 'omega'//let1//'_h.sm'
+		      xlabel = '      w [deg]       '
+		      texb =' omega =            ';texunit='    deg';bf_val=omega(j,soluce);&
+		        & temp1D=omega_end(j,:); test=1
+		    CASE(18)  ! ecosw
+		      fil2 = 'ecosw' // let1 // '.res'; graphfile = 'ecosw'//let1//'_h.sm'
+		      xlabel = '       ecosw        '
+		      texb =' ecosw =            ';texunit='       ';bf_val=ecosw(j,soluce);&
+		        & temp1D=ecosw_end(j,:); test=1
+		    CASE(19)  ! esinw
+		      fil2 = 'esinw' // let1 // '.res'; graphfile = 'esinw'//let1//'_h.sm'
+		      xlabel = '       esinw        '
+		      texb =' esinw =            ';texunit='       ';bf_val=esinw(j,soluce);&
+		        & temp1D=esinw_end(j,:); test=1
+		    CASE(20)  ! Semi-major axis
+		      fil2 = 'a' // let1 // '.res'; graphfile = 'a'//let1//'_h.sm'
+		      xlabel = '       a [AU]       '
+		      texb =' a =                ';texunit='     AU';bf_val=semi(j,soluce);&
+		        & temp1D=semi_end(j,:); test=1
+		    CASE(21)  ! Roche limit
+		      fil2 = 'roche' // let1 // '.res'; graphfile = 'roche'//let1//'_h.sm'
+		      xlabel = '    a_roche [AU]    '
+		      texb =' a_roche =          ';texunit='     AU';bf_val=roche(j,soluce);&
+		        & temp1D=roche_end(j,:); test=1
+		    CASE(22)  ! Ratio semi-major axis on Roche limit
+		      fil2 = 'a_on_roche' // let1 // '.res'; graphfile = 'a_on_roche'//let1//'_h.sm'
+		      xlabel = '     a/a_roche      '
+		      texb =' a/a_roche =        ';texunit='       ';bf_val=a_roche(j,soluce);&
+		        & temp1D=a_roche_end(j,:); test=1
+		    CASE(23)  ! Orbital inclination
+		      fil2 = 'i' // let1 // '.res'; graphfile = 'i'//let1//'_h.sm'
+		      xlabel = '      i [deg]       '
+		      texb =' i =                ';texunit='    deg';bf_val=inclian(j,soluce);&
+		        & temp1D=inclian_end(j,:); test=1
+		    CASE(24)  ! Projected obliquity
+		      IF(j.EQ.1)THEN
+		        fil2 = 'beta' // let1 // '.res'; graphfile = 'beta'//let1//'_h.sm'
+		        xlabel = '     Beta [deg]     '
+		        texb =' beta =             ';texunit='    deg';bf_val=beta(soluce);&
+		          & temp1D=beta_end(:); test=1
+		      ENDIF
+		    CASE(25)  ! Transit impact parameter
+		      fil2 = 'btr' // let1 // '.res'; graphfile = 'btr'//let1//'_h.sm'
+		      xlabel = '      btr [R*]      '
+		      texb =' b_tr =             ';texunit='     R*';bf_val=b2(j,soluce);&
+		        & temp1D=b2_end(j,:); test=1
+		    CASE(26)  ! Occultation impact parameter
+		      fil2 = 'boc' // let1 // '.res'; graphfile = 'boc'//let1//'_h.sm'
+		      xlabel = '      boc [R*]      '
+		      texb =' b_oc =             ';texunit='     R*';bf_val=b3(j,soluce);&
+		        & temp1D=b3_end(j,:); test=1
+		    CASE(27)  ! Prior transit probability
+		      fil2 = 'prtr' // let1 // '.res'; graphfile = 'prtr'//let1//'_h.sm'
+		      xlabel = '       Ptr [%]      '
+		      texb =' P_tr =             ';texunit='      %';bf_val=prtr(j,soluce)*100.;&
+		        & temp1D=prtr_end(j,:)*100.; test=1
+		    CASE(28)  ! Prior occultation probability
+		      fil2 = 'proc' // let1 // '.res'; graphfile = 'proc'//let1//'_h.sm'
+		      xlabel = '       Poc [%]      '
+		      texb =' P_oc =             ';texunit='      %';bf_val=proc(j,soluce)*100.;&
+		        & temp1D=proc_end(j,:)*100.; test=1
+		    CASE(29)  ! Planetary density (Jupiter unit)
+		      fil2 = 'rhop_j' // let1 // '.res'; graphfile = 'rhop_j'//let1//'_h.sm'
+		      xlabel = '     rho [rho_J]    '
+		      texb =' rho_p =            ';texunit='rho_jup';bf_val=rhop(j,soluce);&
+		        & temp1D=rhop_end(j,:); test=1
+		    CASE(30)  ! Planetary density (Earth unit)
+		      cons1 = (earthmass/jupmass)/(earthra/jupra)**3
+		      fil2 = 'rhop_e' // let1 // '.res'; graphfile = 'rhop_e'//let1//'_h.sm'
+		      xlabel = '     rho [rho_E]    '
+		      texb ='                    ';texunit='rho_ear';bf_val=rhop(j,soluce)/cons1;&
+		        & temp1D=rhop_end(j,:)/cons1; test=1  
+		    CASE(31)  ! Planetary density (cgs)
+		      fil2 = 'rhop' // let1 // '.res'; graphfile = 'rhop'//let1//'_h.sm'
+		      xlabel = '    rho [g.cm-3]    '
+		      texb ='                    ';texunit=' g.cm-3';bf_val=rhop(j,soluce)*1.33;&
+		        & temp1D=rhop_end(j,:)*1.33; test=1
+		    CASE(32)  ! Planetary gravity (dex)
+		      fil2 = 'loggp' // let1 // '.res'; graphfile = 'loggp'//let1//'_h.sm'
+		      xlabel = '      log(g)_p      '
+		      texb =' logg_p =           ';texunit='       ';bf_val=logg_p(j,soluce);&
+		        & temp1D=logg_p_end(j,:); test=1 
+		    CASE(33)  ! Equilibrium temperature 
+		      fil2 = 'teqp' // let1 // '.res'; graphfile = 'teqp'//let1//'_h.sm'
+		      xlabel = '       Teq [K]      '
+		      texb =' Teq_p =            ';texunit='      K';bf_val=teq_p(j,soluce);&
+		        & temp1D=teq_p_end(j,:); test=1
+		    CASE(34)  ! Hill radius
+		      fil2 = 'hill' // let1 // '.res'; graphfile = 'hill'//let1//'_h.sm'
+		      xlabel = '      HilR [Rp]     '
+		      texb =' Hill radius =         ';texunit='     Rp';bf_val=hillrad_p(j,soluce);&
+		        & temp1D=hillrad_p_end(j,:); test=1
+		    CASE(35)  ! Irradiation 
+		      fil2 = 'irra' // let1 // '.res'; graphfile = 'irra'//let1//'_h.sm'
+		      xlabel = ' Irradation [Earth] '
+		      texb =' Irradation =       ';texunit='  Earth';bf_val=irrad(j,soluce);&
+		        & temp1D=irrad_end(j,:); test=1
+		    CASE(36)  ! Planet mass (Jupiter unit) 
+		      fil2 = 'mp' // let1 // '.res'; graphfile = 'mp'//let1//'_h.sm'
+		      xlabel = '      M_p [M_J]     '
+		      texb =' Mp =               ';texunit='  M_jup';bf_val=mass_p(j,soluce);&
+		        & temp1D=mass_p_end(j,:); test=1
+		    CASE(37)  ! Planet mass (Earth unit)
+		      cons1 = (earthmass/jupmass)
+		      fil2 = 'mpe' // let1 // '.res'; graphfile = 'mp_e'//let1//'_h.sm'
+		      xlabel = '      M_p [M_E]     '
+		      texb ='                    ';texunit='  M_ear';bf_val=mass_p(j,soluce)/cons1;&
+		        & temp1D=mass_p_end(j,:)/cons1; test=1
+		    CASE(38)  ! Planet msini (Jupiter unit) 
+		      fil2 = 'mpsini' // let1 // '.res'; graphfile = 'mpsini'//let1//'_h.sm'
+		      xlabel = '    Msini [M_J]     '
+		      texb =' Mp sini =          ';texunit='  M_jup';bf_val=mass_p_sini(j,soluce);&
+		        & temp1D=mass_p_sini_end(j,:); test=1
+		    CASE(39)  ! Planet msini (Earth unit)
+		      cons1 = (earthmass/jupmass)
+		      fil2 = 'mpsinie' // let1 // '.res'; graphfile = 'mpsini_e'//let1//'_h.sm'
+		      xlabel = '    Msini [M_E]     '
+		      texb ='                    ';texunit='  M_ear';bf_val=mass_p_sini(j,soluce)/cons1;&
+		        & temp1D=mass_p_sini_end(j,:)/cons1; test=1
+		    CASE(40)  ! Planet radius (Jupiter unit) 
+		      fil2 = 'rp' // let1 // '.res'; graphfile = 'rp'//let1//'_h.sm'
+		      xlabel = '      R_p [R_J]     '
+		      texb =' Rp =               ';texunit='  R_jup';bf_val=radius_p(j,soluce);&
+		        & temp1D=radius_p_end(j,:); test=1
+		    CASE(41)  ! Planet radius (Earth unit)
+		      cons1 = (earthra/jupra)
+		      fil2 = 'rpe' // let1 // '.res'; graphfile = 'rp_e'//let1//'_h.sm'
+		      xlabel = '      R_p [R_E]     '
+		      texb ='                    ';texunit='  R_ear';bf_val=radius_p(j,soluce)/cons1;&
+		        & temp1D=radius_p_end(j,:)/cons1; test=1
+		    CASE(42)  ! Planet Safronov number
+		      fil2 = 'safro' // let1 // '.res'; graphfile = 'safro'//let1//'_h.sm'
+		      xlabel = '  Safronov number   '
+		      texb =' Safronov number =  ';texunit='       ';bf_val=safro(j,soluce);&
+		        & temp1D=safro_end(j,:); test=1
+		  END SELECT
+		  IF(test.EQ.1)THEN
+		    OPEN(UNIT=124,FILE=fil2)
+		    DO l=1,mco
+		      WRITE(124,*) l,temp1D(l)
+		    ENDDO
+		    CLOSE(124)
+		    CALL SORT(mco,temp1D)
+		    CALL PDLIM(mco,temp1D,bf_val,limmed,limpd)
+		    medi_val = temp1d(limmed(5))
+		    CALL HISTO(fil2,graphfile,bf_val,medi_val,xlabel,nbinh)
+		    CALL PDFSCREEN(texb,texunit,bf_val,medi_val,limpd,gelman,gelmanval, & 
+		     & nchain,jump)
+		  ENDIF
+		ENDDO    
+		IF(nddf.GT.0.AND.ntr.GT.0.AND.isddf.NE.'n')THEN  ! Planet size spectrum
+		  DO i=1,nddf
+		    DO k=1,3
+		      SELECT CASE(k)
+		        CASE(1)
+		          texb =' '//ddf_filter(i)//'-R_p =            ';texunit='  R_jup';&
+		           & bf_val=radipla(j,i,soluce);temp1D=radipla_end(j,i,:)
+		          fil2 = 'rp_' // let1 // '_' // ddf_filter(i) // '.res'
+		          graphfile = 'rp_'// let1 // '_' // ddf_filter(i)//'_h.sm'
+		          xlabel = '      R_p [R_J]     '
+		        CASE(2)
+		          texb =' '//ddf_filter(i)//'-Rp/Rs =          ';texunit='       ';&
+		           & bf_val=dratio(j,i,soluce);temp1D=dratio_end(j,i,:)
+		          fil2 = 'rr_' // let1 // '_' // ddf_filter(i) // '.res'
+		          graphfile = 'rr_'// let1 // '_' // ddf_filter(i)//'_h.sm'
+		          xlabel = '       R_p/R_s      '
+		        CASE(3)
+		          texb =' '//ddf_filter(i)//'-dF =             ';texunit='       ';&
+		           & bf_val=ddepth(j,i,soluce);temp1D=ddepth_end(j,i,:)
+		          fil2 = 'dF_' // let1 // '_' // ddf_filter(i) // '.res'
+		          graphfile = 'dF_'// let1 // '_' // ddf_filter(i)//'_h.sm'
+		          xlabel = '         dF         '
+		      END SELECT
+		      OPEN(UNIT=124,FILE=fil2)
+		      DO l=1,mco
+		        WRITE(124,*) l,temp1D(l)
+		      ENDDO
+		      CLOSE(124)
+		      CALL SORT(mco,temp1D)
+		      CALL PDLIM(mco,temp1D,bf_val,limmed,limpd)
+		      medi_val = temp1d(limmed(5))
+		      CALL HISTO(fil2,graphfile,bf_val,medi_val,xlabel,nbinh)
+		      CALL PDFSCREEN(texb,texunit,bf_val,medi_val,limpd,gelman,gelmanval, & 
+		       & nchain,jump)
+		    ENDDO
+		  ENDDO
+		ENDIF
+		IF(nttvmax.GT.0.AND.isttv.EQ.'y')THEN   !Transit timings
+		  let1 = CHAR(48+INT(j/10)); let2 = CHAR(48+MOD(j,10))
+		  DO i=1,nttv(j)
+		    IF(i.LT.10)THEN
+		      let3=CHAR(48+i); texb =' Ttr-'//let3//' = '
+		      fil2 = 'ttr' // let1 // let2//'_'//let3// '.res'
+		      graphfile = 'ttr'//let1//let2//'_'//let3//'_h.sm'
+		    ELSE
+		      let3 = CHAR(48+INT(i/10)); let4 = CHAR(48+MOD(i,10))
+		      texb =' Ttr-'//let3//let4// ' = '
+		      fil2 = 'ttr' // let1 // let2 // '_' //let3 // let4 // '.res'
+		      graphfile = 'ttr'//let1//let2//'_'//let3//let4//'_h.sm'
+		   ENDIF
+		   texunit='     JD'; bf_val=ttr(j,i,soluce); temp1D=ttr_end(j,i,:)
+		    xlabel = '      T_tr [JD]     '
+		    OPEN(UNIT=124,FILE=fil2)
+		    DO l=1,mco
+		      WRITE(124,*) l,temp1D(l)
+		    ENDDO
+		    CLOSE(124)
+		    CALL SORT(mco,temp1D)
+		    CALL PDLIM(mco,temp1D,bf_val,limmed,limpd)
+		    medi_val = temp1d(limmed(5))
+		    CALL HISTO(fil2,graphfile,bf_val,medi_val,xlabel,nbinh)
+		    CALL PDFSCREEN(texb,texunit,bf_val,medi_val,limpd,gelman,gelmanval, & 
+		     & nchain,jump)
+		  ENDDO
+		  WRITE(*,129)   '  rms TTV =           ',ttvrms(j),'   min' 
+		  WRITE(444,129) '  rms TTV  =          ',ttvrms(j),'   min' 
+		  WRITE(445,129) '  rms TTV  =          ',ttvrms(j),'   min' 
+		ENDIF
 
-  DO j=1,npla
-    WRITE(*,'(A8,1x,I2)') 'PLANET ',j
-    WRITE(444,'(A8,1x,I2)') 'PLANET ',j
-    WRITE(445,'(A8,1x,I2)') 'PLANET ',j
-    let1=CHAR(48+j)
-    DO k=1,42
-      test=0
-      SELECT CASE (k)
-        CASE(1) ! Transit depth
-          IF(isjump(j,1).EQ.'n')THEN
-            fil2 = 'df' // let1 // '.res'; graphfile = 'df'//let1//'_h.sm'
-            xlabel = '         dF         '
-            texb =' dF =               ';texunit='       ';bf_val=dF(j,soluce);&
-              & temp1D=dF_end(j,:); test=1
-          ENDIF   
-        CASE(2) ! Tidal elongation
-          IF(isjump(j,1).EQ.'n')THEN
-            fil2 = 'tel' // let1 // '.res'; graphfile = 'tel'//let1//'_h.sm'
-            xlabel = '         TE         '
-            texb =' TE =               ';texunit='       ';bf_val=tidel(j,soluce);&
-              & temp1D=tidel_end(j,:); test=1
-          ENDIF        
-        CASE(3)  ! Transit circular impact parameter
-          IF(isjump(j,2).EQ.'n')THEN
-            fil2 = 'b' // let1 // '.res'; graphfile = 'b'//let1//'_h.sm'
-            xlabel = '        b [R*]      '
-            texb =' b =                ';texunit='     R*';bf_val=b(j,soluce);&
-              & temp1D=b_end(j,:);test=1 
-          ENDIF
-        CASE(4)  ! Transit duration W
-          IF(isjump(j,3).EQ.'n')THEN
-            fil2 = 'dur' // let1 // '.res'; graphfile = 'dur'//let1//'_h.sm'
-            xlabel = '        W [d]       '
-            texb =' W =                ';texunit='   days';bf_val=dur(j,soluce);&
-              & temp1D=dur_end(j,:);test=1
-          ENDIF 
-        CASE(5)  ! Inferior conjunction time
-          IF(isjump(j,4).EQ.'n')THEN
-            fil2 = 't0_' // let1 // '.res'; graphfile = 't0_'//let1//'_h.sm'
-            xlabel = '       T0 [JD]      '
-            texb =' T0 =               ';texunit='     JD';bf_val=t0(j,soluce);&
-              & temp1D=t0_end(j,:);test=1
-          ENDIF
-        CASE(6)  ! Orbital period P
-          IF(isjump(j,5).EQ.'n')THEN 
-            fil2 = 'per' // let1 // '.res'; graphfile = 'per'//let1//'_h.sm'
-            xlabel = '        P [d]       '
-            texb =' P =                ';texunit='   days';bf_val=per(j,soluce);& 
-              & temp1D=per_end(j,:);test=1
-          ENDIF 
-        CASE(7)  ! sqrt(e)cosw 
-          IF(isjump(j,6).EQ.'n')THEN
-            fil2 = 'secosw' // let1 // '.res'; graphfile = 'secosw'//let1//'_h.sm'
-            xlabel = '     sqrt(e)cosw    '
-            texb =' sqrt(e)cosw =      ';texunit='       ';bf_val=secosw(j,soluce);&
-              & temp1D=secosw_end(j,:);test=1
-          ENDIF   
-        CASE(8)  ! sqrt(e)sinw
-          IF(isjump(j,6).EQ.'n')THEN 
-            fil2 = 'sesinw' // let1 // '.res'; graphfile = 'sesinw'//let1//'_h.sm'
-            xlabel = '     sqrt(e)sinw    '
-            texb =' sqrt(e)sinw =      ';texunit = '       '
-            bf_val=sesinw(j,soluce);temp1D=sesinw_end(j,:);test=1
-          ENDIF    
-        CASE(9)  ! K2 
-          IF(isjump(j,7).EQ.'n')THEN
-            fil2 = 'k2_' // let1 // '.res'; graphfile = 'k2_'//let1//'_h.sm'
-            xlabel = '         K2         '
-            texb =' K2 =               ';texunit = '       ';bf_val=kb(j,soluce);&
-              & temp1D=kb_end(j,:);test=1
-          ENDIF
-        CASE(10)  ! sqrt(VsinI)cosB 
-          IF(isjump(j,8).EQ.'n'.AND.j.EQ.1.AND.nrv.GT.0)THEN
-            fil2 = 'svsinicosb' // let1 // '.res'
-            graphfile = 'svsinicosb'//let1//'_h.sm'
-            xlabel = '   sqrt(VsinI)cosB  '
-            texb =' sqrt(VsinI)cosB =  ';texunit = '       '
-            bf_val=svsinicosbeta(soluce);temp1D=svsinicosbeta_end;test=1
-          ENDIF
-        CASE(11)  ! sqrt(VsinI)sinB 
-          IF(isjump(j,8).EQ.'n'.AND.j.EQ.1.AND.nrv.GT.0)THEN
-            fil2 = 'svsinisinb' // let1 // '.res'
-            graphfile = 'svsinisinb'//let1//'_h.sm'
-            xlabel = '   sqrt(VsinI)sinB  '
-            texb =' sqrt(VsinI)sinB =  ';texunit = '       '
-            bf_val=svsinisinbeta(soluce);temp1D=svsinisinbeta_end;test=1
-          ENDIF
-        CASE(12)  ! Superior conjunction time
-          fil2 = 'oct' // let1 // '.res'; graphfile = 'oct'//let1//'_h.sm'
-          xlabel = '     Toc [JD]       '
-          texb =' Tocc =             ';texunit='     JD';bf_val=octime(j,soluce);&
-            & temp1D=octime_end(j,:); test=1  
-        CASE(13)  ! Rp/R*
-          fil2 = 'rr' // let1 // '.res'; graphfile = 'rr'//let1//'_h.sm'
-          xlabel = '       Rp/Rs        '
-          texb =' Rp/Rs =            ';texunit='       ';bf_val=rr(j,soluce);&
-            & temp1D=rr_end(j,:); test=1
-        CASE(14)  ! a/R*
-          fil2 = 'ar' // let1 // '.res'; graphfile = 'ar'//let1//'_h.sm'
-          xlabel = '        a/Rs        '
-          texb =' a/Rs =             ';texunit='       ';bf_val=a_R(j,soluce);&
-            & temp1D=a_R_end(j,:); test=1
-        CASE(15)  ! RV semi-amplitude
-          fil2 = 'k' // let1 // '.res'; graphfile = 'k'//let1//'_h.sm'
-          xlabel = '      K [m/s]       '
-          texb =' K =                ';texunit='    m/s';bf_val=ka(j,soluce);&
-            & temp1D=ka_end(j,:); test=1
-        CASE(16)  ! Excentricity
-          fil2 = 'e' // let1 // '.res'; graphfile = 'e'//let1//'_h.sm'
-          xlabel = '         e          '
-          texb =' e =                ';texunit='       ';bf_val=exc(j,soluce);&
-            & temp1D=exc_end(j,:); test=1
-        CASE(17)  ! Argument of pericenter
-          fil2 = 'omega' // let1 // '.res'; graphfile = 'omega'//let1//'_h.sm'
-          xlabel = '      w [deg]       '
-          texb =' omega =            ';texunit='    deg';bf_val=omega(j,soluce);&
-            & temp1D=omega_end(j,:); test=1
-        CASE(18)  ! ecosw
-          fil2 = 'ecosw' // let1 // '.res'; graphfile = 'ecosw'//let1//'_h.sm'
-          xlabel = '       ecosw        '
-          texb =' ecosw =            ';texunit='       ';bf_val=ecosw(j,soluce);&
-            & temp1D=ecosw_end(j,:); test=1
-        CASE(19)  ! esinw
-          fil2 = 'esinw' // let1 // '.res'; graphfile = 'esinw'//let1//'_h.sm'
-          xlabel = '       esinw        '
-          texb =' esinw =            ';texunit='       ';bf_val=esinw(j,soluce);&
-            & temp1D=esinw_end(j,:); test=1
-        CASE(20)  ! Semi-major axis
-          fil2 = 'a' // let1 // '.res'; graphfile = 'a'//let1//'_h.sm'
-          xlabel = '       a [AU]       '
-          texb =' a =                ';texunit='     AU';bf_val=semi(j,soluce);&
-            & temp1D=semi_end(j,:); test=1
-        CASE(21)  ! Roche limit
-          fil2 = 'roche' // let1 // '.res'; graphfile = 'roche'//let1//'_h.sm'
-          xlabel = '    a_roche [AU]    '
-          texb =' a_roche =          ';texunit='     AU';bf_val=roche(j,soluce);&
-            & temp1D=roche_end(j,:); test=1
-        CASE(22)  ! Ratio semi-major axis on Roche limit
-          fil2 = 'a_on_roche' // let1 // '.res'; graphfile = 'a_on_roche'//let1//'_h.sm'
-          xlabel = '     a/a_roche      '
-          texb =' a/a_roche =        ';texunit='       ';bf_val=a_roche(j,soluce);&
-            & temp1D=a_roche_end(j,:); test=1
-        CASE(23)  ! Orbital inclination
-          fil2 = 'i' // let1 // '.res'; graphfile = 'i'//let1//'_h.sm'
-          xlabel = '      i [deg]       '
-          texb =' i =                ';texunit='    deg';bf_val=inclian(j,soluce);&
-            & temp1D=inclian_end(j,:); test=1
-        CASE(24)  ! Projected obliquity
-          IF(j.EQ.1)THEN
-            fil2 = 'beta' // let1 // '.res'; graphfile = 'beta'//let1//'_h.sm'
-            xlabel = '     Beta [deg]     '
-            texb =' beta =             ';texunit='    deg';bf_val=beta(soluce);&
-              & temp1D=beta_end(:); test=1
-          ENDIF
-        CASE(25)  ! Transit impact parameter
-          fil2 = 'btr' // let1 // '.res'; graphfile = 'btr'//let1//'_h.sm'
-          xlabel = '      btr [R*]      '
-          texb =' b_tr =             ';texunit='     R*';bf_val=b2(j,soluce);&
-            & temp1D=b2_end(j,:); test=1
-        CASE(26)  ! Occultation impact parameter
-          fil2 = 'boc' // let1 // '.res'; graphfile = 'boc'//let1//'_h.sm'
-          xlabel = '      boc [R*]      '
-          texb =' b_oc =             ';texunit='     R*';bf_val=b3(j,soluce);&
-            & temp1D=b3_end(j,:); test=1
-        CASE(27)  ! Prior transit probability
-          fil2 = 'prtr' // let1 // '.res'; graphfile = 'prtr'//let1//'_h.sm'
-          xlabel = '       Ptr [%]      '
-          texb =' P_tr =             ';texunit='      %';bf_val=prtr(j,soluce)*100.;&
-            & temp1D=prtr_end(j,:)*100.; test=1
-        CASE(28)  ! Prior occultation probability
-          fil2 = 'proc' // let1 // '.res'; graphfile = 'proc'//let1//'_h.sm'
-          xlabel = '       Poc [%]      '
-          texb =' P_oc =             ';texunit='      %';bf_val=proc(j,soluce)*100.;&
-            & temp1D=proc_end(j,:)*100.; test=1
-        CASE(29)  ! Planetary density (Jupiter unit)
-          fil2 = 'rhop_j' // let1 // '.res'; graphfile = 'rhop_j'//let1//'_h.sm'
-          xlabel = '     rho [rho_J]    '
-          texb =' rho_p =            ';texunit='rho_jup';bf_val=rhop(j,soluce);&
-            & temp1D=rhop_end(j,:); test=1
-        CASE(30)  ! Planetary density (Earth unit)
-          cons1 = (earthmass/jupmass)/(earthra/jupra)**3
-          fil2 = 'rhop_e' // let1 // '.res'; graphfile = 'rhop_e'//let1//'_h.sm'
-          xlabel = '     rho [rho_E]    '
-          texb ='                    ';texunit='rho_ear';bf_val=rhop(j,soluce)/cons1;&
-            & temp1D=rhop_end(j,:)/cons1; test=1  
-        CASE(31)  ! Planetary density (cgs)
-          fil2 = 'rhop' // let1 // '.res'; graphfile = 'rhop'//let1//'_h.sm'
-          xlabel = '    rho [g.cm-3]    '
-          texb ='                    ';texunit=' g.cm-3';bf_val=rhop(j,soluce)*1.33;&
-            & temp1D=rhop_end(j,:)*1.33; test=1
-        CASE(32)  ! Planetary gravity (dex)
-          fil2 = 'loggp' // let1 // '.res'; graphfile = 'loggp'//let1//'_h.sm'
-          xlabel = '      log(g)_p      '
-          texb =' logg_p =           ';texunit='       ';bf_val=logg_p(j,soluce);&
-            & temp1D=logg_p_end(j,:); test=1 
-        CASE(33)  ! Equilibrium temperature 
-          fil2 = 'teqp' // let1 // '.res'; graphfile = 'teqp'//let1//'_h.sm'
-          xlabel = '       Teq [K]      '
-          texb =' Teq_p =            ';texunit='      K';bf_val=teq_p(j,soluce);&
-            & temp1D=teq_p_end(j,:); test=1
-        CASE(34)  ! Hill radius
-          fil2 = 'hill' // let1 // '.res'; graphfile = 'hill'//let1//'_h.sm'
-          xlabel = '      HilR [Rp]     '
-          texb =' Hill radius =         ';texunit='     Rp';bf_val=hillrad_p(j,soluce);&
-            & temp1D=hillrad_p_end(j,:); test=1
-        CASE(35)  ! Irradiation 
-          fil2 = 'irra' // let1 // '.res'; graphfile = 'irra'//let1//'_h.sm'
-          xlabel = ' Irradation [Earth] '
-          texb =' Irradation =       ';texunit='  Earth';bf_val=irrad(j,soluce);&
-            & temp1D=irrad_end(j,:); test=1
-        CASE(36)  ! Planet mass (Jupiter unit) 
-          fil2 = 'mp' // let1 // '.res'; graphfile = 'mp'//let1//'_h.sm'
-          xlabel = '      M_p [M_J]     '
-          texb =' Mp =               ';texunit='  M_jup';bf_val=mass_p(j,soluce);&
-            & temp1D=mass_p_end(j,:); test=1
-        CASE(37)  ! Planet mass (Earth unit)
-          cons1 = (earthmass/jupmass)
-          fil2 = 'mpe' // let1 // '.res'; graphfile = 'mp_e'//let1//'_h.sm'
-          xlabel = '      M_p [M_E]     '
-          texb ='                    ';texunit='  M_ear';bf_val=mass_p(j,soluce)/cons1;&
-            & temp1D=mass_p_end(j,:)/cons1; test=1
-        CASE(38)  ! Planet msini (Jupiter unit) 
-          fil2 = 'mpsini' // let1 // '.res'; graphfile = 'mpsini'//let1//'_h.sm'
-          xlabel = '    Msini [M_J]     '
-          texb =' Mp sini =          ';texunit='  M_jup';bf_val=mass_p_sini(j,soluce);&
-            & temp1D=mass_p_sini_end(j,:); test=1
-        CASE(39)  ! Planet msini (Earth unit)
-          cons1 = (earthmass/jupmass)
-          fil2 = 'mpsinie' // let1 // '.res'; graphfile = 'mpsini_e'//let1//'_h.sm'
-          xlabel = '    Msini [M_E]     '
-          texb ='                    ';texunit='  M_ear';bf_val=mass_p_sini(j,soluce)/cons1;&
-            & temp1D=mass_p_sini_end(j,:)/cons1; test=1
-        CASE(40)  ! Planet radius (Jupiter unit) 
-          fil2 = 'rp' // let1 // '.res'; graphfile = 'rp'//let1//'_h.sm'
-          xlabel = '      R_p [R_J]     '
-          texb =' Rp =               ';texunit='  R_jup';bf_val=radius_p(j,soluce);&
-            & temp1D=radius_p_end(j,:); test=1
-        CASE(41)  ! Planet radius (Earth unit)
-          cons1 = (earthra/jupra)
-          fil2 = 'rpe' // let1 // '.res'; graphfile = 'rp_e'//let1//'_h.sm'
-          xlabel = '      R_p [R_E]     '
-          texb ='                    ';texunit='  R_ear';bf_val=radius_p(j,soluce)/cons1;&
-            & temp1D=radius_p_end(j,:)/cons1; test=1
-        CASE(42)  ! Planet Safronov number
-          fil2 = 'safro' // let1 // '.res'; graphfile = 'safro'//let1//'_h.sm'
-          xlabel = '  Safronov number   '
-          texb =' Safronov number =  ';texunit='       ';bf_val=safro(j,soluce);&
-            & temp1D=safro_end(j,:); test=1
-      END SELECT
-      IF(test.EQ.1)THEN
-        OPEN(UNIT=124,FILE=fil2)
-        DO l=1,mco
-          WRITE(124,*) l,temp1D(l)
-        ENDDO
-        CLOSE(124)
-        CALL SORT(mco,temp1D)
-        CALL PDLIM(mco,temp1D,bf_val,limmed,limpd)
-        medi_val = temp1d(limmed(5))
-        CALL HISTO(fil2,graphfile,bf_val,medi_val,xlabel,nbinh)
-        CALL PDFSCREEN(texb,texunit,bf_val,medi_val,limpd,gelman,gelmanval, & 
-         & nchain,jump)
-      ENDIF
-    ENDDO    
-    IF(nddf.GT.0.AND.ntr.GT.0.AND.isddf.NE.'n')THEN  ! Planet size spectrum
-      DO i=1,nddf
-        DO k=1,3
-          SELECT CASE(k)
-            CASE(1)
-              texb =' '//ddf_filter(i)//'-R_p =            ';texunit='  R_jup';&
-               & bf_val=radipla(j,i,soluce);temp1D=radipla_end(j,i,:)
-              fil2 = 'rp_' // let1 // '_' // ddf_filter(i) // '.res'
-              graphfile = 'rp_'// let1 // '_' // ddf_filter(i)//'_h.sm'
-              xlabel = '      R_p [R_J]     '
-            CASE(2)
-              texb =' '//ddf_filter(i)//'-Rp/Rs =          ';texunit='       ';&
-               & bf_val=dratio(j,i,soluce);temp1D=dratio_end(j,i,:)
-              fil2 = 'rr_' // let1 // '_' // ddf_filter(i) // '.res'
-              graphfile = 'rr_'// let1 // '_' // ddf_filter(i)//'_h.sm'
-              xlabel = '       R_p/R_s      '
-            CASE(3)
-              texb =' '//ddf_filter(i)//'-dF =             ';texunit='       ';&
-               & bf_val=ddepth(j,i,soluce);temp1D=ddepth_end(j,i,:)
-              fil2 = 'dF_' // let1 // '_' // ddf_filter(i) // '.res'
-              graphfile = 'dF_'// let1 // '_' // ddf_filter(i)//'_h.sm'
-              xlabel = '         dF         '
-          END SELECT
-          OPEN(UNIT=124,FILE=fil2)
-          DO l=1,mco
-            WRITE(124,*) l,temp1D(l)
-          ENDDO
-          CLOSE(124)
-          CALL SORT(mco,temp1D)
-          CALL PDLIM(mco,temp1D,bf_val,limmed,limpd)
-          medi_val = temp1d(limmed(5))
-          CALL HISTO(fil2,graphfile,bf_val,medi_val,xlabel,nbinh)
-          CALL PDFSCREEN(texb,texunit,bf_val,medi_val,limpd,gelman,gelmanval, & 
-           & nchain,jump)
-        ENDDO
-      ENDDO
-    ENDIF
-    IF(nttvmax.GT.0.AND.isttv.EQ.'y')THEN   !Transit timings
-      let1 = CHAR(48+INT(j/10)); let2 = CHAR(48+MOD(j,10))
-      DO i=1,nttv(j)
-        IF(i.LT.10)THEN
-          let3=CHAR(48+i); texb =' Ttr-'//let3//' = '
-          fil2 = 'ttr' // let1 // let2//'_'//let3// '.res'
-          graphfile = 'ttr'//let1//let2//'_'//let3//'_h.sm'
-        ELSE
-          let3 = CHAR(48+INT(i/10)); let4 = CHAR(48+MOD(i,10))
-          texb =' Ttr-'//let3//let4// ' = '
-          fil2 = 'ttr' // let1 // let2 // '_' //let3 // let4 // '.res'
-          graphfile = 'ttr'//let1//let2//'_'//let3//let4//'_h.sm'
-       ENDIF
-       texunit='     JD'; bf_val=ttr(j,i,soluce); temp1D=ttr_end(j,i,:)
-        xlabel = '      T_tr [JD]     '
-        OPEN(UNIT=124,FILE=fil2)
-        DO l=1,mco
-          WRITE(124,*) l,temp1D(l)
-        ENDDO
-        CLOSE(124)
-        CALL SORT(mco,temp1D)
-        CALL PDLIM(mco,temp1D,bf_val,limmed,limpd)
-        medi_val = temp1d(limmed(5))
-        CALL HISTO(fil2,graphfile,bf_val,medi_val,xlabel,nbinh)
-        CALL PDFSCREEN(texb,texunit,bf_val,medi_val,limpd,gelman,gelmanval, & 
-         & nchain,jump)
-      ENDDO
-      WRITE(*,129)   '  rms TTV =           ',ttvrms(j),'   min' 
-      WRITE(444,129) '  rms TTV  =          ',ttvrms(j),'   min' 
-      WRITE(445,129) '  rms TTV  =          ',ttvrms(j),'   min' 
-    ENDIF
-
-  ENDDO
+	  ENDDO
+  end if
 
   PRINT*,      '------------------------------------------------------------------------------------------'
   WRITE(444,*) '------------------------------------------------------------------------------------------'
