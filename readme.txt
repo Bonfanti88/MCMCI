@@ -1,5 +1,5 @@
 |-----------------------------------------------------------------------------|
-|                                 README FILE                   v1.3_20220224 |
+|                                 README FILE                   v1.3_20220314 |
 |                MCMCI code. Bonfanti & Gillon (2020) [BG20]                  |
 |                  andrea.bonfanti@oeaw.ac.at                                 |
 |                  michael.gillon@uliege.be                                   |
@@ -739,9 +739,10 @@ Filenames containing the name of a stellar/planetary parameter may have two
     cmbol -> bolometric magnitude. Now = 25
     cmagx -> Gaia magnitude in Gaia grids. Now=26
 - 24/02/2022. Code set-up also to perform the Isochrone placement only. To this
-   end, isoch='y', MASS and RADIUS have to be set as jump parameters, TEFF and
-   [FEH] have to set as 'p', and one further prior info shall be provided (e.g.
-   RADIUS or LOGG or RHO). All planetary parameters shall be flagged as 0. and
-   not jumping ('n'). Number of LCs and RV time series have to be set to 0 and
-   all the lines displaying the detrending terms are absent.
+   end, isoch='y', MASS and RADIUS have to be set as jump parameters, TEFF (or
+   COLOR_INDEX) and [FEH] have to be set as 'p', and one further prior info 
+   shall be provided (e.g. RADIUS or LOGG or RHO). All planetary parameters
+   shall be flagged as 0. and not jumping ('n'). Number of LCs and RV time 
+   series have to be set to 0 and all the lines displaying the detrending terms
+   are absent.
    NUMBER_OF_PLANETS=1 is required by the code, but that's just a fake
