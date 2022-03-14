@@ -1,6 +1,6 @@
 SUBROUTINE SCPmcmcPD12S(SCP,Intestaz,IsocTab,Zvec,Zndxi,Zndxf,TrackTab,nM,Mav,indxZt,Tndxi,Tndxf, &
 			& velTrackTab,Vndxi,Vndxf,GyroTab,ZAMStab,ZAndxi,ZAndxf,ZtevoTab,Endxi,Endxf,MeAv,M_star,I_M_star, &
-			& R_star,I_R_star,Teff,I_Teff,t_star,I_t_star,L,I_L,link,row,acc)
+			& R_star,I_R_star,Teff,I_Teff,t_star,I_t_star,L,I_L,Z,link,row,acc)
 	
 	USE SunPD
 	USE IsoPD

@@ -137,6 +137,7 @@ PROGRAM MCMCI
   DOUBLE PRECISION, DIMENSION(:), ALLOCATABLE :: ephampli2,sb,gbeta_red
   DOUBLE PRECISION, DIMENSION(:), ALLOCATABLE :: radius_s_end,beta,sdF
   DOUBLE PRECISION, DIMENSION(:), ALLOCATABLE :: logg,logg_end,bf_resrms,age,age_end
+  DOUBLE PRECISION, DIMENSION(:), ALLOCATABLE :: Zini,Zini_end
   DOUBLE PRECISION, DIMENSION(:), ALLOCATABLE :: best_beta_red,beta_red,gjitter
   DOUBLE PRECISION, DIMENSION(:), ALLOCATABLE :: mulimb_qd,z2,rvz,massjitter,massjitter_end
   DOUBLE PRECISION, DIMENSION(:), ALLOCATABLE :: rossiter,ephampli1_ini
@@ -327,10 +328,10 @@ PROGRAM MCMCI
 	subroutine SCPmcmcPD12S(SCP,Intestaz,IsocTab,Zvec,Zndxi,Zndxf, &
 	& TrackTab,nM,Mavail,indxZt,Tndxi,Tndxf,velTrackTab,Vndxi,Vndxf, &
 	& GyroTab,ZAMStab,ZAndxi,ZAndxf,ZtevoTab,Endxi,Endxf,MeAv,M_star,I_M_star, &
-	& R_star,I_R_star,Teff,I_Teff,t_star,I_t_star,L,I_L,link,row,acc)
+	& R_star,I_R_star,Teff,I_Teff,t_star,I_t_star,L,I_L,Zini,link,row,acc)
 	  IMPLICIT NONE
 	  DOUBLE PRECISION :: M_star,I_M_star,R_star,I_R_star,Teff,I_Teff,t_star,I_t_star
-	  DOUBLE PRECISION :: L,I_L
+	  DOUBLE PRECISION :: L,I_L,Zini
 	  DOUBLE PRECISION, DIMENSION(29) :: SCP
 	  DOUBLE PRECISION, DIMENSION(:), INTENT(in) :: Zvec,MeAv
 	  DOUBLE PRECISION, DIMENSION(:,:), INTENT(in) :: IsocTab,TrackTab,Mavail
@@ -1182,6 +1183,7 @@ PROGRAM MCMCI
   ALLOCATE(mass_p_sini(npla,na));ALLOCATE(temp_s(na));ALLOCATE(met_s(na))
   ALLOCATE(radius_s(na)); ALLOCATE(radius_p(npla,na));allocate(col_s(na))
   ALLOCATE(logg(na)); ALLOCATE(irrad(npla,na));allocate(age(na))
+  allocate(Zini(na))
   ALLOCATE(inclian(npla,na)); ALLOCATE(semi(npla,na))
   ALLOCATE(roche(npla,na));ALLOCATE(a_roche(npla,na))
   ALLOCATE(sb_ini(npla));ALLOCATE(st0_ini(npla))
@@ -3885,7 +3887,7 @@ PROGRAM MCMCI
 					& mag,colL,dist,I_dist,Hipf,useColor,dble(idCol) /)
 				call SCPmcmcPD12S(star,ltitle,IsocTab,Zvec,Zndxi,Zndxf,TrackTab,nMt,Mavail,indxZt,Tndxi,Tndxf,velTrackTab, &
 						& Vndxi,Vndxf,GyroTab,ZAMStab,ZAndxi,ZAndxf,ZtevoTab,Endxi,Endxf,MeAv,massTmp,dmassTmp, &
-						& radiusTmp,dradiusTmp,temp_s(link),dtemp_s,age(link),dage,starlum,dstarlum,0,row,acc)
+						& radiusTmp,dradiusTmp,temp_s(link),dtemp_s,age(link),dage,starlum,dstarlum,Zini(link),0,row,acc)
 				print*,'calibL',starlum,dstarlum
 	      	  end if
 	      	  
@@ -3895,7 +3897,7 @@ PROGRAM MCMCI
 								
 			  call SCPmcmcPD12S(star,ltitle,IsocTab,Zvec,Zndxi,Zndxf,TrackTab,nMt,Mavail,indxZt,Tndxi,Tndxf,velTrackTab, &
 							& Vndxi,Vndxf,GyroTab,ZAMStab,ZAndxi,ZAndxf,ZtevoTab,Endxi,Endxf,MeAv,mass_Isoch,dmass_Isoch, &
-							& radius_Isoch,dradius_Isoch,temp_s(link),dtemp_s,age(link),dage,Lum,I_Lum,link,row,acc)
+							& radius_Isoch,dradius_Isoch,temp_s(link),dtemp_s,age(link),dage,Lum,I_Lum,Zini(link),link,row,acc)
 	          age(link)=age(link)/1.E9 !from yrs to Gyr
 	          dage=dage/1.E9
 	          if (acc.eq.0) then !Algorithm hasn't converged
@@ -4205,7 +4207,7 @@ PROGRAM MCMCI
 					& mag,colL,dist,I_dist,Hipf,useColor,dble(idCol) /)
 				call SCPmcmcPD12S(star,ltitle,IsocTab,Zvec,Zndxi,Zndxf,TrackTab,nMt,Mavail,indxZt,Tndxi,Tndxf,velTrackTab, &
 						& Vndxi,Vndxf,GyroTab,ZAMStab,ZAndxi,ZAndxf,ZtevoTab,Endxi,Endxf,MeAv,massTmp,dmassTmp, &
-						& radiusTmp,dradiusTmp,temp_s(link),dtemp_s,age(link),dage,starlum,dstarlum,0,row,acc)
+						& radiusTmp,dradiusTmp,temp_s(link),dtemp_s,age(link),dage,starlum,dstarlum,Zini(link),0,row,acc)
 				print*,'calibL',starlum,dstarlum
 		  	end if
 	    	
@@ -4215,7 +4217,7 @@ PROGRAM MCMCI
 	    			    	
 	    	call SCPmcmcPD12S(star,ltitle,IsocTab,Zvec,Zndxi,Zndxf,TrackTab,nMt,Mavail,indxZt,Tndxi,Tndxf,velTrackTab, &
 	    					& Vndxi,Vndxf,GyroTab,ZAMStab,ZAndxi,ZAndxf,ZtevoTab,Endxi,Endxf,MeAv,mass_Isoch,dmass_Isoch, &
-	    					& radius_Isoch,dradius_Isoch,temp_s(link),dtemp_s,age(link),dage,Lum,I_Lum,link,row,acc)
+	    					& radius_Isoch,dradius_Isoch,temp_s(link),dtemp_s,age(link),dage,Lum,I_Lum,Zini(link),link,row,acc)
 	    	age(link)=age(link)/1.E9 !from yrs to Gyr
             dage=dage/1.E9
             radius_s(link)=(mass_s(link)/(rhoI/rhoSun))**(1./3.)
@@ -6140,6 +6142,7 @@ PROGRAM MCMCI
       !!
       logg(link)=logg(link-1)
       if (isoch.eq.'y') age(link)=age(link-1)
+      if (isoch.eq.'y') Zini(link)=Zini(link-1)
       !!
       ktide(link)=ktide(link-1)
       IF(stelincli.EQ.'y')THEN
@@ -7243,6 +7246,7 @@ PROGRAM MCMCI
   ALLOCATE(phoffset_end(nfi,mco));ALLOCATE(logg_end(mco))
   ALLOCATE(safro_end(npla,mco));ALLOCATE(irrad_end(npla,mco))
   allocate(age_end(mco));allocate(col_s_end(mco))
+  allocate(Zini_end(mco))
   IF(ngroup.GT.0)THEN
     ALLOCATE(dfgroup_end(ngroup,mco))
   ENDIF
@@ -7295,6 +7299,7 @@ PROGRAM MCMCI
       radius_s_end(k)=radius_s(i)
       logg_end(k)=logg(i)
       if (isoch.eq.'y') age_end(k)=age(i)
+      if (isoch.eq.'y') Zini_end(k)=Zini(i)
       mass_s_end(k)=mass_s(i)
       met_s_end(k)=met_s(i)
       temp_s_end(k)=temp_s(i)
@@ -8670,7 +8675,7 @@ PROGRAM MCMCI
   WRITE(444,'(A5)') 'STAR'  
   WRITE(445,'(A5)') 'STAR'
 
-  DO k=1,13
+  DO k=1,14
     test=0
       SELECT CASE (k)
         CASE(1)  ! logg
@@ -8726,7 +8731,7 @@ PROGRAM MCMCI
         CASE(9)  ! Age
           if (isoch.eq.'y') then
 			fil2 = 'age.res'; graphfile = 'age_h.sm'
-			xlabel = '      age           '
+			xlabel = '     Age [Gyr]      '
 			texb =' Age =              ';texunit='    Gyr'
 			bf_val=age(soluce)
 			call find(.not.isEq_v(age_end(:),0.D0,1),nda) !skip flagged values
@@ -8741,26 +8746,33 @@ PROGRAM MCMCI
 			end if
 			print*,'testAge',test
 		  end if
-        CASE(10)  ! VsinI*
+        CASE(10)  ! Zini
+          if(isoch.eq.'y')then
+            fil2 = 'Zini.res'; graphfile = 'Zini_h.sm'
+            xlabel = '       Zini         '
+            texb =' Z initial =        ';texunit='       '
+            bf_val=Zini(soluce); temp1D=Zini_end(:); test=1
+          end if
+        CASE(11)  ! VsinI*
           fil2 = 'vsini.res'; graphfile = 'vsini_h.sm'
           xlabel = '   VsinI* [km/s]    '
           texb =' VsinI* =           ';texunit='   km/s'
-          bf_val=vsini(soluce); temp1D=vsini_end(:); test=1
-        CASE(11) ! SinI*
+          bf_val=vsini(soluce); temp1D=vsini_end(:); test=1  
+        CASE(12) ! SinI*
           IF(stelincli.EQ.'y')THEN
             fil2 = 'sininclis.res'; graphfile = 'sininclis_h.sm'
             xlabel = '        SinI*       '
             texb =' SinI* =            ';texunit='       '
             bf_val=sinincli_s(soluce); temp1D=sinincli_s_end(:); test=1
           ENDIF
-        CASE(12) ! I*
+        CASE(13) ! I*
           IF(stelincli.EQ.'y')THEN
             fil2 = 'inclis.res'; graphfile = 'inclis_h.sm'
             xlabel = '      I* [deg]      '
             texb =' I* =               ';texunit='    deg'
             bf_val=incli_s(soluce); temp1D=incli_s_end(:); test=1
           ENDIF
-        CASE(13) ! M*_jitter
+        CASE(14) ! M*_jitter
           IF(enoch.EQ.'y')THEN
             fil2 = 'mjitter.res'; graphfile = 'mjitters_h.sm'
             xlabel = '  M* jitter [Msun]  '
